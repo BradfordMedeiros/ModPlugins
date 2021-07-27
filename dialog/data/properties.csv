@@ -1,0 +1,9 @@
+start,text,this is some cool text yay
+end1,text,this more cool text
+start,color,  red
+end2,color,yellow
+loner_node,color,blue
+another_random,whatever,2
+another_random,text,some text goes here
+another_random,event-type,newquest-start
+another_random,event-value,devilsdagger

@@ -5,21 +5,7 @@
 #include <assert.h>
 #include <set>
 #include <sstream>
-
-const char* nodeTransitions = " "
-  "start to1 middle\n"
-  "middle to2 end1\n"
-  "middle to3 end2\n" 
-  "start gotoend end2\n"
-"";
-
-const char* nodeProperties = " "
-  "start text this_is_some_cool_text_yay\n"
-  "end text this more_cool_text\n"
-  "start color red\n" 
-  "end color blue\n"
-  "loner_node color blue\n"
-"";
+#include <fstream>
 
 struct Node {
   std::map<std::string, std::string> transitionNameToNode;
@@ -48,6 +34,9 @@ std::set<std::string> allNodeNames(DialogData& data){
   for (auto transitions : data.transitions){
     nodes.insert(transitions.nodeFrom);
     nodes.insert(transitions.nodeTo);
+  }
+  for (auto property : data.properties){
+    nodes.insert(property.node);
   }
   return nodes;
 }
@@ -106,11 +95,21 @@ std::vector<std::vector<std::string>> parseValues(std::string& data){
   std::vector<std::vector<std::string>> values;
   auto vecData = filterWhitespace(split(data, '\n'));
   for (auto data : vecData){
-    values.push_back(filterWhitespace(split(data, ' ')));
+    values.push_back(filterWhitespace(split(data, ',')));
   }
   return values;
 }
 
+std::string loadFile(std::string filepath){
+   std::ifstream file(filepath.c_str());
+   if (!file.good()){
+     throw std::runtime_error("file not found" + filepath);
+   }   
+   std::stringstream buffer;
+   buffer << file.rdbuf();
+   return buffer.str();
+}
+///////////////////////////////////////
 
 std::vector<NodeTransition> deserializeTransitions(std::string& transitionsStr){
   std::vector<NodeTransition> transitions;
@@ -130,7 +129,7 @@ std::vector<NodeProperty> deserializeProperties(std::string& propertiesStr){
   std::vector<NodeProperty> properties;
   auto values = parseValues(propertiesStr);
   for (auto value : values){
-    assert(value.size() >= 3);
+    assert(value.size() == 3);
     properties.push_back(NodeProperty{
       .node = value.at(0),
       .key = value.at(1),
@@ -163,34 +162,69 @@ std::map<std::string, Node> createDialogTree(DialogData data){
 
 // looks like
 //strict graph {
-//"nodefrom" -- "nodeto"
+//"nodefrom" -- "nodeto [label="nameofedge" ]"
 //}
 
-std::string getNodeInfo(std::string name, Node& node){
-  return name;
+std::string getNodeInfo(std::string name, Node& node, std::map<std::string, std::string>& properties){
+  std::string valueStr = name + "\n";
+  for (auto &[key, value] : properties){
+    valueStr = valueStr + " " + key + " - " +  value + "\n" ;
+  }
+  return valueStr;
 }
 
 void dumpDotFormat(std::map<std::string, Node>& dialogTree){
   std::string text = "strict graph {\n";
+
+  std::set<std::string> nodesInGraph;
   for (auto [name, node] : dialogTree){
     for (auto [transitionName, transitionTo] : node.transitionNameToNode){
       text = text + 
-        "\"" + getNodeInfo(name, node) + "\""  + 
+        "\"" + getNodeInfo(name, node, dialogTree.at(name).properties) + "\""  + 
         " -- " + 
-        "\"" + getNodeInfo(transitionTo, dialogTree.at(transitionTo))  + "\"" +
+        "\"" + getNodeInfo(transitionTo, dialogTree.at(transitionTo), dialogTree.at(transitionTo).properties)  + "\"" +
         " [ label=\"" + transitionName + "\" ];" +
         "\n";
+      nodesInGraph.insert(name);
+      nodesInGraph.insert(transitionTo);
     } 
+  }
+
+  for (auto [name, _] : dialogTree){
+    if (nodesInGraph.find(name) == nodesInGraph.end()){
+       text = text + "\"" + getNodeInfo(name, dialogTree.at(name), dialogTree.at(name).properties) + "\"" + "\n";
+    }
   }
   text = text + "}";
   std::cout << text << std::endl;
 }
 
+//SCM scmGetNode(SCM nodename){
+  // returns
+  /*
+      (nodename 
+        (list (gotoend end) (gotomiddle middle))
+        (list (text this_is_some_text) (color this_is_some_color))
+      )
+  */
+//  return SCM_UNDEFINED;
+//}
+
+//void registerGuileFns(){
+  //scm_c_define_gsubr("dialog-node", 1, 0, 0, (void *)scmGetNode);
+//}
+
 #ifdef BINARY_MODE
 
 int main(){
-  auto dialogTree = createDialogTree(deserializeDialogData(nodeTransitions, nodeProperties));
+  auto dialogTree = createDialogTree(
+    deserializeDialogData(
+      loadFile("./data/nodes.csv"), 
+      loadFile("./data/properties.csv")
+    )
+  );
   dumpDotFormat(dialogTree);
 }
 
 #endif
+

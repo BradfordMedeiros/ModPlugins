@@ -1,0 +1,6 @@
+start,to1,middle
+middle,to2,end1
+middle,to3,end2
+start,gotoend,end2
+start,somethingelse,else
+else,rumors,another_random
