@@ -47,12 +47,6 @@ void finalizeSqlObjectType(SCM sqlQuery){
   delete query;
 }
 
-
-SCM scmHelloWorld(){
-  std::cout << "hello world" << std::endl;
-  return SCM_UNSPECIFIED;
-}
-
 void registerGuileFns() asm ("registerGuileFns");
 void registerGuileFns() { 
  scm_c_define_gsubr("sql", 1, 0, 0, (void*)scmSql);
