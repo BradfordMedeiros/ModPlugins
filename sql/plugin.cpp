@@ -1,6 +1,7 @@
 #include <iostream>
 #include <libguile.h>
 #include "./sql.h"
+#include <iostream>
 
 SCM nestedVecToSCM(std::vector<std::vector<std::string>>& list){
   SCM scmList = scm_make_list(scm_from_unsigned_integer(list.size()), scm_from_unsigned_integer(0));
@@ -60,9 +61,44 @@ void registerGuileTypes(){
 
 #ifdef BINARY_MODE
 
-int main(){
+void sampleTest1(){
+  throw std::logic_error("fail");
+}
+void sampleTest2(){
+}
 
-  std::cout << "sql - hello world" << std::endl;
+typedef void (*func_t)();
+struct TestCase {
+  const char* name;
+  func_t test;
+};
+
+int main(){
+  std::vector<TestCase> tests = { 
+    TestCase {
+      .name = "test1",
+      .test = sampleTest1,
+    },
+    TestCase {
+      .name = "test2",
+      .test = sampleTest2,
+    },
+  };
+
+  int totalTests = tests.size();
+  int numFailures = 0;
+  for (int i = 0; i < tests.size(); i++){
+    auto test = tests.at(i);
+    try {
+      test.test();
+      std::cout << i << " : " << test.name << " : pass" << std::endl;
+    }catch(...){
+      std::cout << i << " : " << test.name << " : fail" << std::endl;
+      numFailures++;
+    }
+  }
+
+  std::cout << "Tests passing: " << (totalTests - numFailures) << " / " << totalTests << std::endl;
 }
 
 #endif
