@@ -16,7 +16,7 @@ SCM scmHelloWorld(){
   return SCM_UNSPECIFIED;
 }
 
-void registerGuileFns() asm ("registerGuileFns");
+void registerGuileFns() asm ("registerGuileTypes");
 void registerGuileFns() { 
   scm_c_define_gsubr("hello-world", 0, 0, 0, (void *)scmHelloWorld);
 }
