@@ -6,6 +6,7 @@
 #include <set>
 #include <sstream>
 #include <fstream>
+#include <libguile.h>
 
 struct Node {
   std::map<std::string, std::string> transitionNameToNode;
@@ -199,7 +200,7 @@ void dumpDotFormat(std::map<std::string, Node>& dialogTree){
   std::cout << text << std::endl;
 }
 
-//SCM scmGetNode(SCM nodename){
+SCM scmGetNode(SCM nodename){
   // returns
   /*
       (nodename 
@@ -207,12 +208,15 @@ void dumpDotFormat(std::map<std::string, Node>& dialogTree){
         (list (text this_is_some_text) (color this_is_some_color))
       )
   */
-//  return SCM_UNDEFINED;
-//}
+  std::cout << "want to get: " << scm_to_locale_string(nodename) << std::endl;
+  return SCM_UNDEFINED;
+}
 
-//void registerGuileFns(){
-  //scm_c_define_gsubr("dialog-node", 1, 0, 0, (void *)scmGetNode);
-//}
+void registerGuileFns() asm ("registerGuileFns");
+void registerGuileFns() { 
+  scm_c_define_gsubr("dialog-node", 1, 0, 0, (void *)scmGetNode);
+}
+
 
 #ifdef BINARY_MODE
 
