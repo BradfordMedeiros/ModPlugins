@@ -8,7 +8,7 @@ void onStart() {
 
 void onFrame() asm ("onFrame");
 void onFrame() { 
-  std::cout << "hello world 2 from on start!" << std::endl;
+  //std::cout << "hello world 2 from on start!" << std::endl;
 }
 
 SCM scmHelloWorld(){
