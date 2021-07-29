@@ -1,5 +1,33 @@
 #include "./sqlparse_test.h"
 
+void assertTokenization(std::string str, std::vector<char> delimitors, std::string expectedTokenStr){
+  std::string tokString = tokenizeTypeStr(tokenize(str, delimitors));
+  if (expectedTokenStr != tokString){
+    throw std::logic_error("Incorrect tok string\ngot: " + tokString + " \nwanted: " + expectedTokenStr);
+  }  
+}
+void tokenize1(){
+  assertTokenization("hello-world-yo", {'-'}, "TOKEN(hello) DEL(-) TOKEN(world) DEL(-) TOKEN(yo)");
+}
+void tokenize2(){
+  assertTokenization("hello+world-yo", {'+'}, "TOKEN(hello) DEL(+) TOKEN(world-yo)");
+}
+void tokenize3(){
+  assertTokenization("hello+world-yo", {'+','-'}, "TOKEN(hello) DEL(+) TOKEN(world) DEL(-) TOKEN(yo)");
+}
+void tokenize4(){
+  assertTokenization("", {'-'}, "");
+}
+void tokenize5(){
+  assertTokenization("-", {'-'}, "DEL(-)");
+}
+void tokenize6(){
+  assertTokenization("--", {'-'}, "DEL(-) DEL(-)");
+}
+void tokenize7(){
+  assertTokenization("+-+", {'-'}, "TOKEN(+) DEL(-) TOKEN(+)");
+}
+
 void assertLex(std::string sqlQuery, std::string expectedLex){
   auto lexString = tokenTypeStr(lex(sqlQuery));
   if (lexString != expectedLex){

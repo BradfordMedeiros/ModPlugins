@@ -72,6 +72,34 @@ struct TestCase {
 int main(){
   std::vector<TestCase> tests = { 
     TestCase {
+      .name = "tokenize1",
+      .test = tokenize1,
+    },
+    TestCase {
+      .name = "tokenize2",
+      .test = tokenize2,
+    },
+    TestCase {
+      .name = "tokenize3",
+      .test = tokenize3,
+    },
+    TestCase {
+      .name = "tokenize4",
+      .test = tokenize4,
+    },
+    TestCase {
+      .name = "tokenize5",
+      .test = tokenize5,
+    },
+    TestCase {
+      .name = "tokenize6",
+      .test = tokenize6,
+    },
+    TestCase {
+      .name = "tokenize7",
+      .test = tokenize7,
+    },
+    TestCase {
       .name = "lexTestSelect1",
       .test = lexTestSelect1,
     },
