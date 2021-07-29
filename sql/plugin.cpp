@@ -1,6 +1,5 @@
 #include <iostream>
 #include <libguile.h>
-#include <iostream>
 #include "./sql.h"
 #include "./sqlparse.h"
 
@@ -62,11 +61,7 @@ void registerGuileTypes(){
 
 #ifdef BINARY_MODE
 
-void sampleTest1(){
-  throw std::logic_error("fail");
-}
-void sampleTest2(){
-}
+#include "./sqlparse_test.h"
 
 typedef void (*func_t)();
 struct TestCase {
@@ -77,12 +72,24 @@ struct TestCase {
 int main(){
   std::vector<TestCase> tests = { 
     TestCase {
-      .name = "test1",
-      .test = sampleTest1,
+      .name = "lexTestSelect1",
+      .test = lexTestSelect1,
     },
     TestCase {
-      .name = "test2",
-      .test = sampleTest2,
+      .name = "lexTestSelect2",
+      .test = lexTestSelect2,
+    },
+    TestCase {
+      .name = "lexTestSelect3",
+      .test = lexTestSelect3,
+    },
+    TestCase {
+      .name = "lexTestSelectSplice",
+      .test = lexTestSelectSplice,
+    },
+    TestCase {
+      .name = "lexTestSelectSpliceWeirdSpacing",
+      .test = lexTestSelectSpliceWeirdSpacing,
     },
   };
 
@@ -93,20 +100,14 @@ int main(){
     try {
       test.test();
       std::cout << i << " : " << test.name << " : pass" << std::endl;
+    }catch(std::logic_error ex){
+      std::cout << i << " : " << test.name << " : fail - " << ex.what() << std::endl;
+      numFailures++;
     }catch(...){
       std::cout << i << " : " << test.name << " : fail" << std::endl;
       numFailures++;
     }
   }
-
-  auto tokens = lex("select name from users    ");
-  
-  std::cout << "tokens: (" << tokens.size() << ") :" ;
-  for (auto token : tokens){
-    std::cout << tokenTypeStr(token) << " ";
-  }
-  std::cout << std::endl;
-
   std::cout << "Tests passing: " << (totalTests - numFailures) << " / " << totalTests << std::endl;
 }
 
