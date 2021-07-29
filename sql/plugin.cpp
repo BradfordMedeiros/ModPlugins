@@ -1,7 +1,8 @@
 #include <iostream>
 #include <libguile.h>
-#include "./sql.h"
 #include <iostream>
+#include "./sql.h"
+#include "./sqlparse.h"
 
 SCM nestedVecToSCM(std::vector<std::vector<std::string>>& list){
   SCM scmList = scm_make_list(scm_from_unsigned_integer(list.size()), scm_from_unsigned_integer(0));
@@ -97,6 +98,14 @@ int main(){
       numFailures++;
     }
   }
+
+  auto tokens = lex("select name from users    ");
+  
+  std::cout << "tokens: (" << tokens.size() << ") :" ;
+  for (auto token : tokens){
+    std::cout << tokenTypeStr(token) << " ";
+  }
+  std::cout << std::endl;
 
   std::cout << "Tests passing: " << (totalTests - numFailures) << " / " << totalTests << std::endl;
 }

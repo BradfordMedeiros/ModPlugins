@@ -35,6 +35,25 @@ std::vector<std::string> split(std::string strToSplit, char delimeter){
   }
   return splittedStrings;
 }
+std::string trim(const std::string& str){
+  size_t first = str.find_first_not_of(' ');
+  if (std::string::npos == first){
+    return str;
+  }
+  size_t last = str.find_last_not_of(' ');
+  return str.substr(first, (last - first + 1));
+}
+
+std::vector<std::string> filterWhitespace(std::vector<std::string> values){
+  std::vector<std::string> newStrings;
+  for (auto value : values){
+    auto newValue = trim(value);
+    if (newValue != ""){
+      newStrings.push_back(newValue);
+    }
+  }
+  return newStrings;
+}
 void appendFile(std::string filepath, std::string content){
   std::cout << "appending: " << filepath << " w/ " << content << std::endl;
   std::fstream file(filepath.c_str(), std::ios::out | std::ios::app);
