@@ -119,6 +119,14 @@ int main(){
       .name = "lexTestSelectSpliceWeirdSpacing",
       .test = lexTestSelectSpliceWeirdSpacing,
     },
+    TestCase {
+      .name = "testParserComplete",
+      .test = testParserComplete,
+    },
+    TestCase {
+      .name = "testParserIncomplete",
+      .test = testParserIncomplete,
+    },
   };
 
   int totalTests = tests.size();

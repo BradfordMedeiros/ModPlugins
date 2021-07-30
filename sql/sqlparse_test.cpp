@@ -29,7 +29,7 @@ void tokenize7(){
 }
 
 void assertLex(std::string sqlQuery, std::string expectedLex){
-  auto lexString = tokenTypeStr(lex(sqlQuery));
+  auto lexString = tokenTypeStr(lex(sqlQuery), true);
   if (lexString != expectedLex){
     throw std::logic_error("Incorrect lex string\ngot: " + lexString + " \nwanted: " + expectedLex);
   }  
@@ -66,6 +66,26 @@ void lexTestSelectSpliceWeirdSpacing(){
     "SELECT_TOKEN IDENTIFIER_TOKEN(name) SPLICE_TOKEN IDENTIFIER_TOKEN(age) FROM_TOKEN IDENTIFIER_TOKEN(users) CREATE_TOKEN TABLE_TOKEN DROP_TOKEN TABLE_TOKEN"
   );
 }
+
+void assertComplete(std::string expression, bool expected){
+  bool complete = createParser(lex(expression));
+  if (complete != expected){
+    throw std::logic_error(std::string("Incorrect completeness\ngot: ") + std::to_string(complete) + " \nwanted: " + std::to_string(expected));
+  }
+}
+
+void testParserComplete(){
+  assertComplete("create table sometable", true);
+  assertComplete("create table anothertable", true);
+  assertComplete("drop table anothertable", true);
+}
+
+void testParserIncomplete(){
+  assertComplete("create", false);
+  assertComplete("table anothertable", false);
+  assertComplete("blob table anothertable", false);
+}
+
 
 
 

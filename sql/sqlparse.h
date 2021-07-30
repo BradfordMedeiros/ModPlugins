@@ -2,6 +2,7 @@
 #define MODPLUGIN_SQLPARSE
 
 #include <vector>
+#include <map>
 #include <string>
 #include <algorithm>
 #include <variant>
@@ -19,7 +20,7 @@ struct IdentifierToken{
 };
 typedef std::variant<SelectToken, CreateToken, DropToken, TableToken, FromToken, SpliceToken, IdentifierToken> LexTokens;
 
-std::string tokenTypeStr(std::vector<LexTokens> tokens);
+std::string tokenTypeStr(std::vector<LexTokens> tokens, bool includeContent);
 std::vector<LexTokens> lex(std::string value);
 
 struct TokenResult {
@@ -30,5 +31,6 @@ struct TokenResult {
 
 std::string tokenizeTypeStr(std::vector<TokenResult> tokens);
 std::vector<TokenResult> tokenize(std::string str, std::vector<char> delimiters);
+bool createParser(std::vector<LexTokens> lexTokens);
 
 #endif

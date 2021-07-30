@@ -5,7 +5,7 @@ std::string toUpper(std::string s){
   return s;
 }
 
-std::string tokenTypeStr(LexTokens token){
+std::string tokenTypeStr(LexTokens token, bool includeContent){
   auto selectToken = std::get_if<SelectToken>(&token);
   if (selectToken != NULL){
     return "SELECT_TOKEN"; 
@@ -38,16 +38,21 @@ std::string tokenTypeStr(LexTokens token){
 
   auto identifierToken = std::get_if<IdentifierToken>(&token);
   if (identifierToken != NULL){
-    return std::string("IDENTIFIER_TOKEN(") + identifierToken -> content + ")";
+    std::string result =  "IDENTIFIER_TOKEN";
+    if (includeContent){
+      result = result + "(" + identifierToken -> content + ")";
+    }
+    return result;
   }
+
   assert(false);
   return "";
 }
-std::string tokenTypeStr(std::vector<LexTokens> tokens){
+std::string tokenTypeStr(std::vector<LexTokens> tokens, bool includeContent){
   std::string content = "";
   for (int i = 0; i < tokens.size(); i++){
     auto token = tokens.at(i);
-    content = content + tokenTypeStr(token) + (i < (tokens.size() - 1) ? " " : "");
+    content = content + tokenTypeStr(token, includeContent) + (i < (tokens.size() - 1) ? " " : "");
   }
   return content;
 }
@@ -142,12 +147,28 @@ std::vector<LexTokens> lex(std::string value){
   return lexTokens;
 }
 
-void createParser(std::string grammar){
-  // create -> table 
-  // drop   -> table 
-  // table -> identifier
-  // (create -> table -> identifier) => select query 
+bool createParser(std::vector<LexTokens> lexTokens){
+  std::map<std::string, std::vector<std::string>> machine;
 
-  // select -> identifier -> 
+  machine["start"] = { "CREATE_TOKEN", "DROP_TOKEN" };
+  machine["CREATE_TOKEN"] = { "TABLE_TOKEN" };
+  machine["DROP_TOKEN"] = { "TABLE_TOKEN" };
+  machine["TABLE_TOKEN"] = { "IDENTIFIER_TOKEN" };
+  machine["IDENTIFIER_TOKEN" ] = { "*END*" };
 
+  std::string currState = "start";
+  for (auto lexToken : lexTokens){
+    auto nextStates = machine.at(currState);
+    auto tokenAsStr = tokenTypeStr(lexToken, false);
+    bool nextStateValid = std::count(nextStates.begin(), nextStates.end(), tokenAsStr) > 0;
+    if (!nextStateValid){
+      return false;
+    }
+    currState = tokenAsStr;
+  }
+
+  auto finalNextStates = machine.at(currState);
+  auto completeExpression = std::count(finalNextStates.begin(), finalNextStates.end(), "*END*") > 0;
+
+  return completeExpression;
 }
