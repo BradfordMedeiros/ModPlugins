@@ -8,19 +8,19 @@
 #include <stdio.h>
 #include "./util.h"
 
-enum SQL_TOKENTYPES { SELECT_TOKEN, FROM_TOKEN, IDENTIFIER_TOKEN };
-
 struct SelectToken {};
+struct CreateToken {};
+struct DropToken {};
+struct TableToken {};
 struct FromToken {};
 struct SpliceToken {};
 struct IdentifierToken{
   std::string content;
 };
-typedef std::variant<SelectToken, FromToken, SpliceToken, IdentifierToken> LexTokens;
+typedef std::variant<SelectToken, CreateToken, DropToken, TableToken, FromToken, SpliceToken, IdentifierToken> LexTokens;
 
 std::string tokenTypeStr(std::vector<LexTokens> tokens);
 std::vector<LexTokens> lex(std::string value);
-
 
 struct TokenResult {
   bool isDelimiter;

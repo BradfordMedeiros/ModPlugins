@@ -62,8 +62,8 @@ void lexTestSelectSplice(){
 
 void lexTestSelectSpliceWeirdSpacing(){
   assertLex(
-    "select  name ,  age from users",
-    "SELECT_TOKEN IDENTIFIER_TOKEN(name) SPLICE_TOKEN IDENTIFIER_TOKEN(age) FROM_TOKEN IDENTIFIER_TOKEN(users)"
+    "select  name ,  age from users create table drop table ",
+    "SELECT_TOKEN IDENTIFIER_TOKEN(name) SPLICE_TOKEN IDENTIFIER_TOKEN(age) FROM_TOKEN IDENTIFIER_TOKEN(users) CREATE_TOKEN TABLE_TOKEN DROP_TOKEN TABLE_TOKEN"
   );
 }
 

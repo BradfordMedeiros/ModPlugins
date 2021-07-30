@@ -21,6 +21,21 @@ std::string tokenTypeStr(LexTokens token){
     return "SPLICE_TOKEN";
   }
 
+  auto createToken = std::get_if<CreateToken>(&token);
+  if (createToken != NULL){
+    return "CREATE_TOKEN";
+  }
+
+  auto dropToken = std::get_if<DropToken>(&token);
+  if (dropToken != NULL){
+    return "DROP_TOKEN";
+  }
+
+  auto tableToken = std::get_if<TableToken>(&token);
+  if (tableToken != NULL){
+    return "TABLE_TOKEN";
+  }
+
   auto identifierToken = std::get_if<IdentifierToken>(&token);
   if (identifierToken != NULL){
     return std::string("IDENTIFIER_TOKEN(") + identifierToken -> content + ")";
@@ -40,7 +55,6 @@ std::string tokenTypeStr(std::vector<LexTokens> tokens){
 bool isIdentifier(std::string token){
   return true;
 }
-
 
 std::string tokenTypeStr(TokenResult token){
   if (token.isDelimiter){
@@ -93,23 +107,47 @@ std::vector<TokenResult> tokenize(std::string str, std::vector<char> delimiters)
 }
 
 std::vector<LexTokens> lex(std::string value){
-  std::vector<std::string> tokens = filterWhitespace(split(value, ' '));
   std::vector<LexTokens> lexTokens;
-
-  auto tokenizedContent = tokenize(value, {' ', ',' });
-
-  for (auto token : tokens){
-    if (toUpper(token) == "SELECT"){
-      lexTokens.push_back(SelectToken{});
-    }else if (toUpper(token) == "FROM"){
-      lexTokens.push_back(FromToken{});
-    }else if (token == ","){
+  std::vector<TokenResult> filteredTokens;
+  for (auto token : tokenize(value, {' ', ',' })){
+    if (token.isDelimiter && token.delimiter == ' '){
+      continue;
+    }
+    filteredTokens.push_back(token);
+  }
+  for (auto token : filteredTokens){
+    if (token.isDelimiter){
+      assert(token.delimiter == ',');
       lexTokens.push_back(SpliceToken{});
-    }else if (isIdentifier(token)){
-      lexTokens.push_back(IdentifierToken{
-        .content = token,
-      });
+    }else{
+      if (toUpper(token.token) == "SELECT"){
+        lexTokens.push_back(SelectToken{});
+      }else if (toUpper(token.token) == "FROM"){
+        lexTokens.push_back(FromToken{});
+      }else if (toUpper(token.token) == "CREATE"){
+        lexTokens.push_back(CreateToken{});
+      }else if (toUpper(token.token) == "DROP"){
+        lexTokens.push_back(DropToken{});
+      }else if (toUpper(token.token) == "TABLE"){
+        lexTokens.push_back(TableToken{});
+      }else if (isIdentifier(token.token)){
+        lexTokens.push_back(IdentifierToken{
+          .content = token.token,
+        });
+      }else{
+        assert(false);
+      }
     }
   }
   return lexTokens;
+}
+
+void createParser(std::string grammar){
+  // create -> table 
+  // drop   -> table 
+  // table -> identifier
+  // (create -> table -> identifier) => select query 
+
+  // select -> identifier -> 
+
 }
