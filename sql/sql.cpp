@@ -165,20 +165,3 @@ std::vector<std::vector<std::string>> executeSqlQuery(SqlQuery& query){
   assert(false);
   return {{"one", "two", "three"}, {"hello", "wow", "go"}};
 }
-
-SqlQuery compileSqlQuery(std::string queryString){
-  SqlQuery query {
-    .type = SQL_SELECT,
-    .table = "testtable",
-    .queryData = SqlSelect{
-      .columns = { "somecolumn1", "somecolumn2" },
-      .filter = SqlFilter {
-        .hasFilter = false,
-        .column = "",
-        .value = "",
-        .invert = false,
-      }
-    }
-  }; 
-  return query;
-}

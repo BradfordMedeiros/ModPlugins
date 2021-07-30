@@ -172,3 +172,20 @@ bool createParser(std::vector<LexTokens> lexTokens){
 
   return completeExpression;
 }
+
+SqlQuery compileSqlQuery(std::string queryString){
+  SqlQuery query {
+    .type = SQL_SELECT,
+    .table = "testtable",
+    .queryData = SqlSelect{
+      .columns = { "somecolumn1", "somecolumn2" },
+      .filter = SqlFilter {
+        .hasFilter = false,
+        .column = "",
+        .value = "",
+        .invert = false,
+      }
+    }
+  }; 
+  return query;
+}
