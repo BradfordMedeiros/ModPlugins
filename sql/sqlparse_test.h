@@ -22,4 +22,8 @@ void lexTestSelectSpliceWeirdSpacing();
 void testParserComplete();
 void testParserIncomplete();
 
+void testCompileSqlCreateTable();
+void testCompileSqlDropTable();
+void testCompileSqlSelect();
+
 #endif

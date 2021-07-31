@@ -127,8 +127,19 @@ int main(){
       .name = "testParserIncomplete",
       .test = testParserIncomplete,
     },
+    TestCase {
+      .name = "testCompileSqlCreateTable",
+      .test = testCompileSqlCreateTable,
+    },
+    TestCase {
+      .name = "testCompileSqlDropTable",
+      .test = testCompileSqlDropTable,
+    },
+    TestCase {
+      .name = "testCompileSqlSelect",
+      .test = testCompileSqlSelect,
+    },
   };
-
   int totalTests = tests.size();
   int numFailures = 0;
   for (int i = 0; i < tests.size(); i++){
@@ -140,7 +151,7 @@ int main(){
       std::cout << i << " : " << test.name << " : fail - " << ex.what() << std::endl;
       numFailures++;
     }catch(...){
-      std::cout << i << " : " << test.name << " : fail" << std::endl;
+      std::cout << i << " : " << test.name << " : fail -- error unknown" << std::endl;
       numFailures++;
     }
   }

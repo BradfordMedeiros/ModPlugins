@@ -86,6 +86,56 @@ void testParserIncomplete(){
   assertComplete("blob table anothertable", false);
 }
 
+void testCompileSqlCreateTable(){
+  auto sqlQuery1 = compileSqlQuery("create table testtable");
+  assert(sqlQuery1.validQuery);
+  assert(sqlQuery1.type == SQL_CREATE_TABLE);
+  assert(sqlQuery1.table == "testtable");
+
+  auto sqlQuery2 = compileSqlQuery(" create    table another  ");
+  assert(sqlQuery2.validQuery);
+  assert(sqlQuery2.type == SQL_CREATE_TABLE);
+  assert(sqlQuery2.table == "another");
+}
+
+void testCompileSqlDropTable(){
+  auto sqlQuery1 = compileSqlQuery("drop table testtable");
+  assert(sqlQuery1.validQuery);
+  assert(sqlQuery1.type == SQL_DELETE_TABLE);
+  assert(sqlQuery1.table == "testtable");
+
+  auto sqlQuery2 = compileSqlQuery("drop table another");
+  assert(sqlQuery2.validQuery);
+  assert(sqlQuery2.type == SQL_DELETE_TABLE);
+  assert(sqlQuery2.table == "another");
+}
+
+void testCompileSqlSelect(){
+  auto sqlQuery1 = compileSqlQuery("select name, age from testtable");
+  assert(sqlQuery1.validQuery);
+  assert(sqlQuery1.type == SQL_SELECT);
+  assert(sqlQuery1.table == "testtable");
+  auto queryData = std::get_if<SqlSelect>(&(sqlQuery1.queryData));
+  assert(queryData != NULL);
+  assert(!queryData -> filter.hasFilter);
+  assert(queryData -> columns.at(0) == "name");
+  assert(queryData -> columns.at(1) == "age");
+}
+
+/*
+struct SqlSelect {
+  std::vector<std::string> columns;
+  SqlFilter filter;
+};  bool validQuery;
+  SQL_QUERY_TYPE type;
+  std::string table;
+  std::variant<SqlSelect, SqlInsert, SqlCreate, SqlUpdate, SqlDelete> queryData;
 
 
-
+struct SqlFilter {
+  bool hasFilter;
+  std::string column;
+  std::string value;
+  bool invert;
+};
+  */
