@@ -5,6 +5,7 @@
 #include <map>
 #include <string>
 #include <algorithm>
+#include <functional>
 #include <variant>
 #include <stdio.h>
 #include "./util.h"
@@ -63,11 +64,12 @@ struct SqlDelete {
 };
 
 struct SqlQuery {
+  bool validQuery;
   SQL_QUERY_TYPE type;
   std::string table;
   std::variant<SqlSelect, SqlInsert, SqlCreate, SqlUpdate, SqlDelete> queryData;
 };
-bool createParser(std::vector<LexTokens> lexTokens);
+SqlQuery createParser(std::vector<LexTokens> lexTokens);
 
 SqlQuery compileSqlQuery(std::string queryString);
 

@@ -68,7 +68,7 @@ void lexTestSelectSpliceWeirdSpacing(){
 }
 
 void assertComplete(std::string expression, bool expected){
-  bool complete = createParser(lex(expression));
+  bool complete = createParser(lex(expression)).validQuery;
   if (complete != expected){
     throw std::logic_error(std::string("Incorrect completeness\ngot: ") + std::to_string(complete) + " \nwanted: " + std::to_string(expected));
   }
