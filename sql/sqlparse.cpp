@@ -75,6 +75,10 @@ std::string tokenTypeStr(LexTokens token, bool includeContent){
   if (showToken != NULL){
     return "SHOW_TOKEN";
   }
+  auto describeToken = std::get_if<DescribeToken>(&token);
+  if (describeToken != NULL){
+    return "DESCRIBE_TOKEN";
+  }
 
   assert(false);
   return "";
@@ -184,6 +188,8 @@ std::vector<LexTokens> lex(std::string value){
         lexTokens.push_back(InsertToken{});
       }else if (toUpper(token.token) == "INTO"){
         lexTokens.push_back(IntoToken{});
+      }else if (toUpper(token.token) == "DESCRIBE"){
+        lexTokens.push_back(DescribeToken{});
       }else if (isIdentifier(token.token)){
         lexTokens.push_back(IdentifierToken{
           .content = token.token,
@@ -211,7 +217,8 @@ std::map<std::string, TokenState> machine = {
       NextState { .token = "CREATE_TOKEN", .stateSuffix = "" }, 
       NextState { .token = "DROP_TOKEN", .stateSuffix = "" },
       NextState { .token = "SELECT_TOKEN", .stateSuffix = "" },
-      NextState { .token = "SHOW_TOKEN", .stateSuffix = "" },
+      NextState { .token = "SHOW_TOKEN", .stateSuffix = "" },\
+      NextState { .token = "DESCRIBE_TOKEN", .stateSuffix = "" },\
     },
     .fn = [](SqlQuery& query, LexTokens* token) -> void {},
   }},
@@ -300,6 +307,25 @@ std::map<std::string, TokenState> machine = {
     .fn = [](SqlQuery& query, LexTokens* token) -> void {},
   }},
   {"IDENTIFIER_TOKEN:tableselect", TokenState{ 
+    .nextStates = { 
+      NextState { .token = "*END*", .stateSuffix = "" },
+    },
+    .fn = [](SqlQuery& query, LexTokens* token) -> void {
+      auto identifierToken = std::get_if<IdentifierToken>(token);
+      assert(identifierToken != NULL);
+      query.table = identifierToken -> content;
+    },
+  }},
+  {"DESCRIBE_TOKEN", TokenState{ 
+    .nextStates = { 
+      NextState { .token = "IDENTIFIER_TOKEN", .stateSuffix = "" },
+    },
+    .fn = [](SqlQuery& query, LexTokens* token) -> void {
+      query.type = SQL_DESCRIBE;
+      query.queryData = SqlDescribe{};
+    },
+  }},
+  {"IDENTIFIER_TOKEN", TokenState{ 
     .nextStates = { 
       NextState { .token = "*END*", .stateSuffix = "" },
     },

@@ -24,6 +24,29 @@ void deleteTable(std::string tableName){
   std::cout << "deleting: " << tableName << " backed by: " << filepath << std::endl;
   std::remove(filepath.c_str());
 }
+
+struct TableData {
+  std::vector<std::string> header;
+  std::vector<std::string> rawRows;
+};
+TableData readTableData(std::string tableName){
+  auto tableContent = loadFile(tablePath(tableName));
+  auto rawRows = split(tableContent, '\n');
+  auto header = split(rawRows.at(0), ',');
+  return TableData{
+    .header = header,
+    .rawRows = rawRows,
+  };
+}
+
+std::vector<std::vector<std::string>> describeTable(std::string tableName){
+  std::vector<std::vector<std::string>> rows;
+  auto tableData = readTableData(tableName);
+  for (auto header : tableData.header){
+    rows.push_back({ header });
+  }
+  return rows;
+}
 std::vector<std::vector<std::string>> showTables(){
   auto allFiles = listAllFilesStems(basePath);
   std::vector<std::vector<std::string>> files;
@@ -46,20 +69,6 @@ std::vector<int> getColumnIndexs(std::vector<std::string> header, std::vector<st
     assert(foundCol);
   }
   return indexs;
-}
-
-struct TableData {
-  std::vector<std::string> header;
-  std::vector<std::string> rawRows;
-};
-TableData readTableData(std::string tableName){
-  auto tableContent = loadFile(tablePath(tableName));
-  auto rawRows = split(tableContent, '\n');
-  auto header = split(rawRows.at(0), ',');
-  return TableData{
-    .header = header,
-    .rawRows = rawRows,
-  };
 }
 
 std::vector<std::vector<std::string>> select(std::string tableName, std::vector<std::string> columns, SqlFilter filter){
@@ -185,6 +194,9 @@ std::vector<std::vector<std::string>> executeSqlQuery(SqlQuery& query){
     std::cout << "sql delete table" << std::endl;
     deleteTable(query.table);
     return {};
+  }else if (query.type == SQL_DESCRIBE){
+    std::cout << "sql describe table" << std::endl;
+    return describeTable(query.table);
   }else if (query.type == SQL_SHOW_TABLES){
     return showTables();
   }
