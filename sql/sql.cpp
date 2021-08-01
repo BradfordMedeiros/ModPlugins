@@ -71,7 +71,7 @@ std::vector<int> getColumnIndexs(std::vector<std::string> header, std::vector<st
   return indexs;
 }
 
-std::vector<std::vector<std::string>> select(std::string tableName, std::vector<std::string> columns, SqlFilter filter){
+std::vector<std::vector<std::string>> select(std::string tableName, std::vector<std::string> columns, SqlFilter filter, int limit){
   auto tableData = readTableData(tableName);
   std::vector<std::vector<std::string>> rows;
 
@@ -81,6 +81,7 @@ std::vector<std::vector<std::string>> select(std::string tableName, std::vector<
   }
 
   auto indexs = getColumnIndexs(tableData.header, columns);
+
 
   for (int i = 1; i < tableData.rawRows.size(); i++){
     std::vector<std::string> row;
@@ -96,6 +97,9 @@ std::vector<std::vector<std::string>> select(std::string tableName, std::vector<
       if (filter.invert && columnValue == filter.value){
         continue;
       }
+    }
+    if (limit >= 0 && rows.size() >= limit){
+      break;
     }
     rows.push_back(row);
   }
@@ -129,7 +133,7 @@ void insert(std::string tableName, std::vector<std::string> columns, std::vector
 void update(std::string tableName, std::vector<std::string>& columns, std::vector<std::string>& values, SqlFilter& filter){
   assert(filter.hasFilter);
   auto tableData = readTableData(tableName);
-  auto allRows = select(tableName, tableData.header, SqlFilter{ .hasFilter = false });
+  auto allRows = select(tableName, tableData.header, SqlFilter{ .hasFilter = false }, -1);
 
   std::string content = createHeader(tableData.header);
   for (auto row : allRows){
@@ -149,7 +153,7 @@ void deleteRows(std::string tableName, SqlFilter& filter){
   auto copyFilter = filter;
   copyFilter.invert = !filter.invert;
 
-  auto rowsToKeep = select(tableName, tableData.header, copyFilter);
+  auto rowsToKeep = select(tableName, tableData.header, copyFilter, -1);
 
   std::string content = createHeader(tableData.header);
   for (auto row : rowsToKeep){
@@ -165,7 +169,7 @@ std::vector<std::vector<std::string>> executeSqlQuery(SqlQuery& query){
     std::cout << "sql select query" << std::endl;
     auto selectData = std::get_if<SqlSelect>(&query.queryData);
     assert(selectData != NULL);
-    return select(query.table, selectData -> columns, selectData -> filter);
+    return select(query.table, selectData -> columns, selectData -> filter, selectData -> limit);
   }else if (query.type == SQL_INSERT){
     std::cout << "sql insert query" << std::endl;
     auto insertData = std::get_if<SqlInsert>(&query.queryData);

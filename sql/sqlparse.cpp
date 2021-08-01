@@ -93,7 +93,7 @@ std::vector<const char*> validSymbols = {
 std::vector<LexTokens> lex(std::string value){
   std::vector<LexTokens> lexTokens;
   std::vector<TokenResult> filteredTokens;
-  for (auto token : tokenize(value, {' ', ',', '(', ')' })){
+  for (auto token : tokenize(value, {' ', ',', '(', ')', '=', '"' })){
     if (token.isDelimiter && token.delimiter == ' '){
       continue;
     }
@@ -107,6 +107,10 @@ std::vector<LexTokens> lex(std::string value){
         lexTokens.push_back(SymbolToken { .name = "LEFTP" });
       }else if (token.delimiter == ')'){
         lexTokens.push_back(SymbolToken { .name = "RIGHTP" });
+      }else if (token.delimiter == '='){
+        lexTokens.push_back(SymbolToken { .name = "EQUAL" });
+      }else if (token.delimiter == '\"'){
+        lexTokens.push_back(SymbolToken { .name = "QUOTE" });
       }else{
         std::cout << "delimiter: " << token.delimiter << std::endl;
         assert(false);
@@ -209,7 +213,9 @@ std::map<std::string, TokenState> machine = {
     },
     .fn = [](SqlQuery& query, LexTokens* token) -> void {
       query.type = SQL_SELECT;
-      query.queryData = SqlSelect{};
+      query.queryData = SqlSelect{
+        .limit = -1,
+      };
     },
   }},
   {"IDENTIFIER_TOKEN:select", TokenState{ 
@@ -240,6 +246,7 @@ std::map<std::string, TokenState> machine = {
   }},
   {"IDENTIFIER_TOKEN:tableselect", TokenState{ 
     .nextStates = { 
+      NextState { .token = "LIMIT", .stateSuffix = "tableselect" },
       NextState { .token = "*END*", .stateSuffix = "" },
     },
     .fn = [](SqlQuery& query, LexTokens* token) -> void {
@@ -247,6 +254,25 @@ std::map<std::string, TokenState> machine = {
       assert(identifierToken != NULL);
       query.table = identifierToken -> content;
     },
+  }},
+  {"LIMIT:tableselect", TokenState{ 
+    .nextStates = { 
+      NextState { .token = "IDENTIFIER_TOKEN", .stateSuffix = "limit_tableselect" },
+      NextState { .token = "*END*", .stateSuffix = "" },
+    },
+    .fn = [](SqlQuery& query, LexTokens* token) -> void {},
+  }},
+  {"IDENTIFIER_TOKEN:limit_tableselect", TokenState{ 
+    .nextStates = { 
+      NextState { .token = "*END*", .stateSuffix = "" },
+    },
+    .fn = [](SqlQuery& query, LexTokens* token) -> void {
+      auto identifierToken = std::get_if<IdentifierToken>(token);
+      assert(identifierToken != NULL);
+      SqlSelect* selectQuery = std::get_if<SqlSelect>(&query.queryData);
+      assert(selectQuery != NULL);
+      selectQuery -> limit = std::atoi(identifierToken -> content.c_str()); // strong typing should occur earlier
+    },  
   }},
   {"DESCRIBE", TokenState{ 
     .nextStates = { 

@@ -42,6 +42,7 @@ struct SqlFilter {
 
 struct SqlSelect {
   std::vector<std::string> columns;
+  int limit;
   SqlFilter filter;
 };
 struct SqlInsert {
