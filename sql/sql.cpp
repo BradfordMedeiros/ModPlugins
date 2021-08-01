@@ -138,7 +138,8 @@ void deleteRows(std::string tableName, SqlFilter& filter){
 }
 
 std::vector<std::vector<std::string>> executeSqlQuery(SqlQuery& query){
-//SQL_SELECT, SQL_INSERT, SQL_UPDATE, SQL_DELETE, SQL_CREATE_TABLE, SQL_DELETE_TABLE
+  std::cout << "executing sql query" << std::endl;
+  assert(query.validQuery);
   if (query.type == SQL_SELECT){
     auto selectData = std::get_if<SqlSelect>(&query.queryData);
     return select(query.table, selectData -> columns, selectData -> filter);

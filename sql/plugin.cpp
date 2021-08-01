@@ -69,7 +69,30 @@ struct TestCase {
   func_t test;
 };
 
-int main(){
+int main(int argc, char *argv[]){
+  bool shellMode = false;
+  if (argc >= 2){
+    if (strcmp(argv[1], "shell") == 0){
+      shellMode = true;
+    }
+  }
+
+  if (shellMode){
+    while(true){
+      std::string value;
+      std::getline(std::cin, value);
+      if (value == "quit"){
+        return 0;
+      }
+      auto sqlQuery = compileSqlQuery(value);
+      if(sqlQuery.validQuery){
+        executeSqlQuery(sqlQuery);
+      }else{
+        std::cout << "Invalid query: " << value << std::endl;
+      }
+    }
+  }
+
   std::vector<TestCase> tests = { 
     TestCase {
       .name = "tokenize1",
