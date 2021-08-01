@@ -13,6 +13,8 @@
 struct SelectToken {};
 struct CreateToken {};
 struct DropToken {};
+struct ShowToken{};
+struct DescribeToken{};
 struct TableToken {};
 struct FromToken {};
 struct SpliceToken {};
@@ -29,7 +31,8 @@ typedef std::variant<
   SelectToken, CreateToken, DropToken, TableToken, FromToken, 
   IdentifierToken, 
   SpliceToken, LeftParenthesisToken, RightParenthesisToken,
-  InsertToken, IntoToken, ValuesToken
+  InsertToken, IntoToken, ValuesToken,
+  ShowToken, DescribeToken
 > LexTokens;
 
 std::string tokenTypeStr(std::vector<LexTokens> tokens, bool includeContent);

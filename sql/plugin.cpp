@@ -78,20 +78,35 @@ int main(int argc, char *argv[]){
   }
 
   if (shellMode){
+    bool lexMode = false;
     while(true){
       std::string value;
       std::getline(std::cin, value);
       if (value == "quit"){
         return 0;
+      }else if (value == "lex"){
+        std::cout << "lex mode enabled" << std::endl;
+        lexMode = true;
+        continue;
+      }else if (value == "sql"){
+        std::cout << "sql mode enabled" << std::endl;
+        lexMode = false; 
+        continue;
       }
-      auto sqlQuery = compileSqlQuery(value);
-      if(sqlQuery.validQuery){
-        auto rows = executeSqlQuery(sqlQuery);
-        for (auto row : rows){
-          std::cout << join(row, ' ') << std::endl;
+
+      if (!lexMode){
+        auto sqlQuery = compileSqlQuery(value);
+        if(sqlQuery.validQuery){
+          auto rows = executeSqlQuery(sqlQuery);
+          for (auto row : rows){
+            std::cout << join(row, ' ') << std::endl;
+          }
+        }else{
+          std::cout << "Invalid query: " << value << std::endl;
         }
       }else{
-        std::cout << "Invalid query: " << value << std::endl;
+        auto lexString = tokenTypeStr(lex(value), true);
+        std::cout << lexString << std::endl;
       }
     }
   }

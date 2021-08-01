@@ -178,5 +178,5 @@ std::vector<std::vector<std::string>> executeSqlQuery(SqlQuery& query){
     return {};
   }
   assert(false);
-  return {{"one", "two", "three"}, {"hello", "wow", "go"}};
+  return {};
 }
