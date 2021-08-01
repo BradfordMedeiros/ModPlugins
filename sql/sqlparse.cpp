@@ -153,53 +153,98 @@ struct NextState {
 };
 struct TokenState {
   std::vector<NextState> nextStates;
-  std::function<void(SqlQuery&, LexTokens)> fn;
+  std::function<void(SqlQuery&, LexTokens*)> fn;
 };
 
-SqlQuery createParser(std::vector<LexTokens> lexTokens){
-  std::map<std::string, TokenState> machine;
-
-  machine["start"] = TokenState{
+std::map<std::string, TokenState> machine = {
+  {"start", TokenState{
     .nextStates = {
-       NextState { .token = "CREATE_TOKEN", .stateSuffix = "" }, 
-       NextState { .token = "DROP_TOKEN", .stateSuffix = "" },
+      NextState { .token = "CREATE_TOKEN", .stateSuffix = "" }, 
+      NextState { .token = "DROP_TOKEN", .stateSuffix = "" },
+      NextState { .token = "SELECT_TOKEN", .stateSuffix = "" },
     },
-    .fn = [](SqlQuery& query, LexTokens token) -> void {
-    },
-  };
-  machine["CREATE_TOKEN"] = TokenState{ 
+    .fn = [](SqlQuery& query, LexTokens* token) -> void {},
+  }},
+  {"CREATE_TOKEN", TokenState{ 
     .nextStates = { 
       NextState { .token = "TABLE_TOKEN", .stateSuffix = "" },
     },
-    .fn = [](SqlQuery& query, LexTokens token) -> void {
+    .fn = [](SqlQuery& query, LexTokens* token) -> void {
       query.type = SQL_CREATE_TABLE;
     },
-  };
-  machine["DROP_TOKEN"] = TokenState{ 
+  }},
+  {"DROP_TOKEN", TokenState{ 
     .nextStates = { 
       NextState { .token = "TABLE_TOKEN", .stateSuffix = "" },
     }, 
-    .fn = [](SqlQuery& query, LexTokens token) -> void {
+    .fn = [](SqlQuery& query, LexTokens* token) -> void {
       query.type = SQL_DELETE_TABLE;
     },
-  };
-  machine["TABLE_TOKEN"] = TokenState{ 
+  }},
+  {"TABLE_TOKEN", TokenState{ 
     .nextStates = { 
       NextState { .token = "IDENTIFIER_TOKEN", .stateSuffix = "table" },
     }, 
-    .fn = [](SqlQuery& query, LexTokens token) -> void {
-      auto identifier = std::get_if<IdentifierToken>(&token);
-      assert(identifier != NULL);
-      query.table = identifier -> content;
-    },
-  };
-  machine["IDENTIFIER_TOKEN:table" ] = TokenState{ 
+    .fn = [](SqlQuery& query, LexTokens* token) -> void {},
+  }},
+  {"IDENTIFIER_TOKEN:table", TokenState{ 
     .nextStates = { 
       NextState { .token = "*END*", .stateSuffix = "" },
     },
-    .fn = [](SqlQuery& query, LexTokens token) -> void {},
-  };
-  
+    .fn = [](SqlQuery& query, LexTokens* token) -> void {
+      auto identifier = std::get_if<IdentifierToken>(token);
+      assert(identifier != NULL);
+      query.table = identifier -> content;
+    },
+  }},
+  {"SELECT_TOKEN", TokenState{ 
+    .nextStates = { 
+      NextState { .token = "IDENTIFIER_TOKEN", .stateSuffix = "select" },
+    },
+    .fn = [](SqlQuery& query, LexTokens* token) -> void {
+      query.type = SQL_SELECT;
+      query.queryData = SqlSelect{};
+    },
+  }},
+  {"IDENTIFIER_TOKEN:select", TokenState{ 
+    .nextStates = { 
+      NextState { .token = "SPLICE_TOKEN", .stateSuffix = "" },
+      NextState { .token = "FROM_TOKEN", .stateSuffix = "" },
+
+    },
+    .fn = [](SqlQuery& query, LexTokens* token) -> void {
+      auto identifierToken = std::get_if<IdentifierToken>(token);
+      assert(identifierToken != NULL);
+      SqlSelect* selectQuery = std::get_if<SqlSelect>(&query.queryData);
+      assert(selectQuery != NULL);
+      selectQuery -> columns.push_back(identifierToken -> content);
+    },
+  }},
+  {"SPLICE_TOKEN", TokenState{ 
+    .nextStates = { 
+      NextState { .token = "IDENTIFIER_TOKEN", .stateSuffix = "select" },
+    },
+    .fn = [](SqlQuery& query, LexTokens* token) -> void {},
+  }},
+  {"FROM_TOKEN", TokenState{ 
+    .nextStates = { 
+      NextState { .token = "IDENTIFIER_TOKEN", .stateSuffix = "tableselect" },
+    },
+    .fn = [](SqlQuery& query, LexTokens* token) -> void {},
+  }},
+  {"IDENTIFIER_TOKEN:tableselect", TokenState{ 
+    .nextStates = { 
+      NextState { .token = "*END*", .stateSuffix = "" },
+    },
+    .fn = [](SqlQuery& query, LexTokens* token) -> void {
+      auto identifierToken = std::get_if<IdentifierToken>(token);
+      assert(identifierToken != NULL);
+      query.table = identifierToken -> content;
+    },
+  }}
+};
+
+SqlQuery createParser(std::vector<LexTokens> lexTokens){
   SqlQuery query {
     .validQuery = false,
     .type = SQL_SELECT,
@@ -207,9 +252,16 @@ SqlQuery createParser(std::vector<LexTokens> lexTokens){
   };
   std::string currState = "start";
   std::string stateSuffix = "";
-  for (auto lexToken : lexTokens){
+
+  LexTokens* lastToken = NULL;
+  for (auto &lexToken : lexTokens){
+    if (machine.find(currState) == machine.end()){
+      break;
+    }
     auto nextStates = machine.at(currState).nextStates;
-    machine.at(currState).fn(query, lexToken);
+    machine.at(currState).fn(query, lastToken);
+    lastToken = &lexToken;
+
     auto tokenAsStr = tokenTypeStr(lexToken, false);
     bool nextStateValid = false;
     for (auto state : nextStates){
@@ -224,15 +276,19 @@ SqlQuery createParser(std::vector<LexTokens> lexTokens){
     }
     currState = tokenAsStr + (stateSuffix.size() == 0 ? "" : (":" + stateSuffix));
   }
-  auto finalNextStates = machine.at(currState).nextStates;
-  auto completeExpression = false;
-  for (auto state : finalNextStates){
-    if (state.token == "*END*"){
-      completeExpression = true;
-      break;
+
+  if (machine.find(currState) != machine.end()){
+    machine.at(currState).fn(query, lastToken);
+    auto finalNextStates = machine.at(currState).nextStates;
+    auto completeExpression = false;
+    for (auto state : finalNextStates){
+      if (state.token == "*END*"){
+        completeExpression = true;
+        break;
+      }
     }
+    query.validQuery = completeExpression;
   }
-  query.validQuery = completeExpression;
   return query;
 }
 
