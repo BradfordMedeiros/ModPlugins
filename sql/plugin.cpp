@@ -153,6 +153,10 @@ int main(int argc, char *argv[]){
       .test = lexTestSelect3,
     },
     TestCase {
+      .name = "lexTestSelect4",
+      .test = lexTestSelect4,
+    },
+    TestCase {
       .name = "lexTestSelectSplice",
       .test = lexTestSelectSplice,
     },
