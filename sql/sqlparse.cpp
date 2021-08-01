@@ -36,6 +36,11 @@ std::string tokenTypeStr(LexTokens token, bool includeContent){
     return "TABLE_TOKEN";
   }
 
+  auto tablesToken = std::get_if<TablesToken>(&token);
+  if (tablesToken != NULL){
+    return "TABLES_TOKEN";
+  }
+
   auto identifierToken = std::get_if<IdentifierToken>(&token);
   if (identifierToken != NULL){
     std::string result =  "IDENTIFIER_TOKEN";
@@ -65,6 +70,12 @@ std::string tokenTypeStr(LexTokens token, bool includeContent){
   if (valueToken != NULL){
     return "VALUE_TOKEN";
   }
+
+  auto showToken = std::get_if<ShowToken>(&token);
+  if (showToken != NULL){
+    return "SHOW_TOKEN";
+  }
+
   assert(false);
   return "";
 }
@@ -163,6 +174,10 @@ std::vector<LexTokens> lex(std::string value){
         lexTokens.push_back(DropToken{});
       }else if (toUpper(token.token) == "TABLE"){
         lexTokens.push_back(TableToken{});
+      }else if (toUpper(token.token) == "SHOW"){
+        lexTokens.push_back(ShowToken{});
+      }else if (toUpper(token.token) == "TABLES"){
+        lexTokens.push_back(TablesToken{});
       }else if (toUpper(token.token) == "VALUES"){
         lexTokens.push_back(ValuesToken{});
       }else if (toUpper(token.token) == "INSERT"){

@@ -16,6 +16,7 @@ struct DropToken {};
 struct ShowToken{};
 struct DescribeToken{};
 struct TableToken {};
+struct TablesToken {};
 struct FromToken {};
 struct SpliceToken {};
 struct InsertToken {};
@@ -28,7 +29,7 @@ struct IdentifierToken{
   std::string content;
 };
 typedef std::variant<
-  SelectToken, CreateToken, DropToken, TableToken, FromToken, 
+  SelectToken, CreateToken, DropToken, TableToken, TablesToken, FromToken, 
   IdentifierToken, 
   SpliceToken, LeftParenthesisToken, RightParenthesisToken,
   InsertToken, IntoToken, ValuesToken,
