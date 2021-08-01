@@ -49,7 +49,7 @@ std::string tokenizeTypeStr(std::vector<TokenResult> tokens);
 std::vector<TokenResult> tokenize(std::string str, std::vector<char> delimiters);
 
 
-enum SQL_QUERY_TYPE { SQL_SELECT, SQL_INSERT, SQL_UPDATE, SQL_DELETE, SQL_CREATE_TABLE, SQL_DELETE_TABLE };
+enum SQL_QUERY_TYPE { SQL_SELECT, SQL_INSERT, SQL_UPDATE, SQL_DELETE, SQL_CREATE_TABLE, SQL_DELETE_TABLE, SQL_SHOW_TABLES };
 
 struct SqlFilter {
   bool hasFilter;
@@ -77,12 +77,13 @@ struct SqlUpdate {
 struct SqlDelete {
   SqlFilter filter;
 };
+struct SqlShowTables{};
 
 struct SqlQuery {
   bool validQuery;
   SQL_QUERY_TYPE type;
   std::string table;
-  std::variant<SqlSelect, SqlInsert, SqlCreate, SqlUpdate, SqlDelete> queryData;
+  std::variant<SqlSelect, SqlInsert, SqlCreate, SqlUpdate, SqlDelete, SqlShowTables> queryData;
 };
 SqlQuery createParser(std::vector<LexTokens> lexTokens);
 

@@ -1,6 +1,16 @@
 #include "./util.h"
 
 /// warning copy/paste part. Maybe should include common code for such little code...?  But might be not worth it...
+std::vector<std::string> listAllFilesStems(std::filesystem::path path) {
+  std::vector<std::string> files;
+  for(auto &file: std::filesystem::recursive_directory_iterator(path)) {
+    if (!std::filesystem::is_directory(file)) {
+      files.push_back(file.path().stem());
+    }
+  }
+  return files;
+}
+
 std::string join(std::vector<std::string> values, char delimeter){
   std::string value = "";
   for (int i = 0; i < values.size(); i++){

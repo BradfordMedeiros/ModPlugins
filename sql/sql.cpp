@@ -5,8 +5,9 @@ std::string escapeCSVEntry(std::string data){
   return data;
 }
 
+std::string basePath = "./res/state/";
 std::string tablePath(std::string tableName){
-  return "./res/state/" + tableName + ".csv";  // TODO do paths better bro
+  return basePath + tableName + ".csv";  // TODO do paths better bro
 }
 
 std::string createHeader(std::vector<std::string> columns){
@@ -22,6 +23,14 @@ void deleteTable(std::string tableName){
   auto filepath = tablePath(tableName);
   std::cout << "deleting: " << tableName << " backed by: " << filepath << std::endl;
   std::remove(filepath.c_str());
+}
+std::vector<std::vector<std::string>> showTables(){
+  auto allFiles = listAllFilesStems(basePath);
+  std::vector<std::vector<std::string>> files;
+  for (auto file : allFiles){
+    files.push_back({ file });
+  }
+  return files;
 }
 
 std::vector<int> getColumnIndexs(std::vector<std::string> header, std::vector<std::string> columns){
@@ -176,6 +185,8 @@ std::vector<std::vector<std::string>> executeSqlQuery(SqlQuery& query){
     std::cout << "sql delete table" << std::endl;
     deleteTable(query.table);
     return {};
+  }else if (query.type == SQL_SHOW_TABLES){
+    return showTables();
   }
   assert(false);
   return {};

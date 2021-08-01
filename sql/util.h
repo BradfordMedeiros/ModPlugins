@@ -8,7 +8,9 @@
 #include <fstream>
 #include <sstream>
 #include <assert.h>
+#include <filesystem>
 
+std::vector<std::string> listAllFilesStems(std::filesystem::path path);
 std::string join(std::vector<std::string> values, char delimeter);
 void saveFile(std::string filepath, std::string content);
 std::string loadFile(std::string filepath);

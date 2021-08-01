@@ -211,6 +211,7 @@ std::map<std::string, TokenState> machine = {
       NextState { .token = "CREATE_TOKEN", .stateSuffix = "" }, 
       NextState { .token = "DROP_TOKEN", .stateSuffix = "" },
       NextState { .token = "SELECT_TOKEN", .stateSuffix = "" },
+      NextState { .token = "SHOW_TOKEN", .stateSuffix = "" },
     },
     .fn = [](SqlQuery& query, LexTokens* token) -> void {},
   }},
@@ -235,6 +236,21 @@ std::map<std::string, TokenState> machine = {
   {"TABLE_TOKEN", TokenState{ 
     .nextStates = { 
       NextState { .token = "IDENTIFIER_TOKEN", .stateSuffix = "table" },
+    }, 
+    .fn = [](SqlQuery& query, LexTokens* token) -> void {},
+  }},
+  {"SHOW_TOKEN", TokenState{
+    .nextStates = { 
+      NextState { .token = "TABLES_TOKEN", .stateSuffix = "" },
+    }, 
+    .fn = [](SqlQuery& query, LexTokens* token) -> void {
+      query.type = SQL_SHOW_TABLES;
+      query.queryData = SqlShowTables{};
+    },
+  }},
+  {"TABLES_TOKEN", TokenState{ 
+    .nextStates = { 
+      NextState { .token = "*END*", .stateSuffix = "" },
     }, 
     .fn = [](SqlQuery& query, LexTokens* token) -> void {},
   }},
