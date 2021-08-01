@@ -120,6 +120,10 @@ int main(){
       .test = lexTestSelectSpliceWeirdSpacing,
     },
     TestCase {
+      .name = "lexTestInsert1",
+      .test = lexTestInsert1,
+    },
+    TestCase {
       .name = "testParserComplete",
       .test = testParserComplete,
     },

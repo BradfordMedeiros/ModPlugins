@@ -18,6 +18,7 @@ void lexTestSelect2();
 void lexTestSelect3();
 void lexTestSelectSplice();
 void lexTestSelectSpliceWeirdSpacing();
+void lexTestInsert1();
 
 void testParserComplete();
 void testParserIncomplete();

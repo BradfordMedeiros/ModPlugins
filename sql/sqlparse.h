@@ -16,10 +16,21 @@ struct DropToken {};
 struct TableToken {};
 struct FromToken {};
 struct SpliceToken {};
+struct InsertToken {};
+struct IntoToken {};
+struct ValuesToken {};
+struct LeftParenthesisToken {};
+struct RightParenthesisToken {};
+
 struct IdentifierToken{
   std::string content;
 };
-typedef std::variant<SelectToken, CreateToken, DropToken, TableToken, FromToken, SpliceToken, IdentifierToken> LexTokens;
+typedef std::variant<
+  SelectToken, CreateToken, DropToken, TableToken, FromToken, 
+  IdentifierToken, 
+  SpliceToken, LeftParenthesisToken, RightParenthesisToken,
+  InsertToken, IntoToken, ValuesToken
+> LexTokens;
 
 std::string tokenTypeStr(std::vector<LexTokens> tokens, bool includeContent);
 std::vector<LexTokens> lex(std::string value);

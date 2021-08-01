@@ -67,6 +67,13 @@ void lexTestSelectSpliceWeirdSpacing(){
   );
 }
 
+void lexTestInsert1(){
+  assertLex(
+    "insert into users (name, age) values ('bob', 20)",
+    "INSERT_TOKEN INTO_TOKEN IDENTIFIER_TOKEN(users) LEFTP_TOKEN IDENTIFIER_TOKEN(name) SPLICE_TOKEN IDENTIFIER_TOKEN(age) RIGHTP_TOKEN VALUE_TOKEN LEFTP_TOKEN IDENTIFIER_TOKEN('bob') SPLICE_TOKEN IDENTIFIER_TOKEN(20) RIGHTP_TOKEN"
+  );
+}
+
 void assertComplete(std::string expression, bool expected){
   bool complete = createParser(lex(expression)).validQuery;
   if (complete != expected){
@@ -122,20 +129,4 @@ void testCompileSqlSelect(){
   assert(queryData -> columns.at(1) == "age");
 }
 
-/*
-struct SqlSelect {
-  std::vector<std::string> columns;
-  SqlFilter filter;
-};  bool validQuery;
-  SQL_QUERY_TYPE type;
-  std::string table;
-  std::variant<SqlSelect, SqlInsert, SqlCreate, SqlUpdate, SqlDelete> queryData;
 
-
-struct SqlFilter {
-  bool hasFilter;
-  std::string column;
-  std::string value;
-  bool invert;
-};
-  */

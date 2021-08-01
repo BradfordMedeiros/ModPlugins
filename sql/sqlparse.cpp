@@ -45,6 +45,26 @@ std::string tokenTypeStr(LexTokens token, bool includeContent){
     return result;
   }
 
+  auto leftParenthesisToken = std::get_if<LeftParenthesisToken>(&token);
+  if (leftParenthesisToken != NULL){
+    return "LEFTP_TOKEN";
+  }
+  auto rightParenthesisToken = std::get_if<RightParenthesisToken>(&token);
+  if (rightParenthesisToken != NULL){
+    return "RIGHTP_TOKEN";
+  }
+  auto insertToken = std::get_if<InsertToken>(&token);
+  if (insertToken != NULL){
+    return "INSERT_TOKEN";
+  }
+  auto intoToken = std::get_if<IntoToken>(&token);
+  if (intoToken != NULL){
+    return "INTO_TOKEN";
+  }
+  auto valueToken = std::get_if<ValuesToken>(&token);
+  if (valueToken != NULL){
+    return "VALUE_TOKEN";
+  }
   assert(false);
   return "";
 }
@@ -114,7 +134,7 @@ std::vector<TokenResult> tokenize(std::string str, std::vector<char> delimiters)
 std::vector<LexTokens> lex(std::string value){
   std::vector<LexTokens> lexTokens;
   std::vector<TokenResult> filteredTokens;
-  for (auto token : tokenize(value, {' ', ',' })){
+  for (auto token : tokenize(value, {' ', ',', '(', ')' })){
     if (token.isDelimiter && token.delimiter == ' '){
       continue;
     }
@@ -122,8 +142,16 @@ std::vector<LexTokens> lex(std::string value){
   }
   for (auto token : filteredTokens){
     if (token.isDelimiter){
-      assert(token.delimiter == ',');
-      lexTokens.push_back(SpliceToken{});
+      if (token.delimiter == ','){
+        lexTokens.push_back(SpliceToken{});
+      }else if (token.delimiter == '('){
+        lexTokens.push_back(LeftParenthesisToken{});
+      }else if (token.delimiter == ')'){
+        lexTokens.push_back(RightParenthesisToken{});
+      }else{
+        std::cout << "delimiter: " << token.delimiter << std::endl;
+        assert(false);
+      }
     }else{
       if (toUpper(token.token) == "SELECT"){
         lexTokens.push_back(SelectToken{});
@@ -135,6 +163,12 @@ std::vector<LexTokens> lex(std::string value){
         lexTokens.push_back(DropToken{});
       }else if (toUpper(token.token) == "TABLE"){
         lexTokens.push_back(TableToken{});
+      }else if (toUpper(token.token) == "VALUES"){
+        lexTokens.push_back(ValuesToken{});
+      }else if (toUpper(token.token) == "INSERT"){
+        lexTokens.push_back(InsertToken{});
+      }else if (toUpper(token.token) == "INTO"){
+        lexTokens.push_back(IntoToken{});
       }else if (isIdentifier(token.token)){
         lexTokens.push_back(IdentifierToken{
           .content = token.token,
