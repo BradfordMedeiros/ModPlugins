@@ -53,6 +53,14 @@ void lexTestSelect3(){
   );
 }
 
+void lexTestSelect4(){
+  assertLex(
+    "select count(style) from fashions group by name",
+    "SELECT_TOKEN IDENTIFIER_TOKEN(count) LEFTP_TOKEN IDENTIFIER_TOKEN(style) RIGHTP_TOKEN FROM_TOKEN IDENTIFIER_TOKEN(fashions) GROUP_TOKEN BY_TOKEN IDENTIFIER_TOKEN(name)"
+  );
+}
+
+
 void lexTestSelectSplice(){
   assertLex(
     "select name,age from users",

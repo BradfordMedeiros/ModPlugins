@@ -1,11 +1,14 @@
 #include "./util.h"
 
 /// warning copy/paste part. Maybe should include common code for such little code...?  But might be not worth it...
-std::vector<std::string> listAllFilesStems(std::filesystem::path path) {
+std::vector<std::string> listAllCsvFilesStems(std::filesystem::path path) {
   std::vector<std::string> files;
   for(auto &file: std::filesystem::recursive_directory_iterator(path)) {
     if (!std::filesystem::is_directory(file)) {
-      files.push_back(file.path().stem());
+      std::cout << "extension: " << file.path().extension() << std::endl;
+      if (file.path().extension() == ".csv"){
+        files.push_back(file.path().stem());
+      }
     }
   }
   return files;

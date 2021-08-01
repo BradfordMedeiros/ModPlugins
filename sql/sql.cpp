@@ -48,7 +48,7 @@ std::vector<std::vector<std::string>> describeTable(std::string tableName){
   return rows;
 }
 std::vector<std::vector<std::string>> showTables(){
-  auto allFiles = listAllFilesStems(basePath);
+  auto allFiles = listAllCsvFilesStems(basePath);
   std::vector<std::vector<std::string>> files;
   for (auto file : allFiles){
     files.push_back({ file });

@@ -16,6 +16,7 @@ void tokenize7();
 void lexTestSelect1();
 void lexTestSelect2();
 void lexTestSelect3();
+void lexTestSelect4();
 void lexTestSelectSplice();
 void lexTestSelectSpliceWeirdSpacing();
 void lexTestInsert1();
