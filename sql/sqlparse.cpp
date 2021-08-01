@@ -87,8 +87,9 @@ std::vector<TokenResult> tokenize(std::string str, std::vector<char> delimiters)
 
 
 std::vector<const char*> validSymbols = {
-  "SELECT", "FROM", "CREATE", "DROP", "TABLE", "SHOW", "TABLES", "VALUES", "INSERT", "INTO", "DESCRIBE", "GROUP", "BY"
-};
+  "SELECT", "FROM", "CREATE", "DROP", "TABLE", "SHOW", "TABLES", "VALUES", "INSERT", "INTO", "DESCRIBE", "GROUP", "BY", "LIMIT", "WHERE"
+}; 
+
 std::vector<LexTokens> lex(std::string value){
   std::vector<LexTokens> lexTokens;
   std::vector<TokenResult> filteredTokens;
