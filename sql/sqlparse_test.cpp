@@ -37,26 +37,26 @@ void assertLex(std::string sqlQuery, std::string expectedLex){
 void lexTestSelect1(){
   assertLex(
     "select name from users",
-    "SELECT_TOKEN IDENTIFIER_TOKEN(name) FROM_TOKEN IDENTIFIER_TOKEN(users)"
+    "SELECT IDENTIFIER_TOKEN(name) FROM IDENTIFIER_TOKEN(users)"
   );
 }
 void lexTestSelect2(){
   assertLex(
     "    select  name  from users    ",
-    "SELECT_TOKEN IDENTIFIER_TOKEN(name) FROM_TOKEN IDENTIFIER_TOKEN(users)"
+    "SELECT IDENTIFIER_TOKEN(name) FROM IDENTIFIER_TOKEN(users)"
   );
 }
 void lexTestSelect3(){
   assertLex(
     "select style from fashions",
-    "SELECT_TOKEN IDENTIFIER_TOKEN(style) FROM_TOKEN IDENTIFIER_TOKEN(fashions)"
+    "SELECT IDENTIFIER_TOKEN(style) FROM IDENTIFIER_TOKEN(fashions)"
   );
 }
 
 void lexTestSelect4(){
   assertLex(
     "select count(style) from fashions group by name",
-    "SELECT_TOKEN IDENTIFIER_TOKEN(count) LEFTP_TOKEN IDENTIFIER_TOKEN(style) RIGHTP_TOKEN FROM_TOKEN IDENTIFIER_TOKEN(fashions) GROUP_TOKEN BY_TOKEN IDENTIFIER_TOKEN(name)"
+    "SELECT IDENTIFIER_TOKEN(count) LEFTP IDENTIFIER_TOKEN(style) RIGHTP FROM IDENTIFIER_TOKEN(fashions) GROUP BY IDENTIFIER_TOKEN(name)"
   );
 }
 
@@ -64,21 +64,21 @@ void lexTestSelect4(){
 void lexTestSelectSplice(){
   assertLex(
     "select name,age from users",
-    "SELECT_TOKEN IDENTIFIER_TOKEN(name) SPLICE_TOKEN IDENTIFIER_TOKEN(age) FROM_TOKEN IDENTIFIER_TOKEN(users)"
+    "SELECT IDENTIFIER_TOKEN(name) SPLICE IDENTIFIER_TOKEN(age) FROM IDENTIFIER_TOKEN(users)"
   );
 }
 
 void lexTestSelectSpliceWeirdSpacing(){
   assertLex(
     "select  name ,  age from users create table drop table ",
-    "SELECT_TOKEN IDENTIFIER_TOKEN(name) SPLICE_TOKEN IDENTIFIER_TOKEN(age) FROM_TOKEN IDENTIFIER_TOKEN(users) CREATE_TOKEN TABLE_TOKEN DROP_TOKEN TABLE_TOKEN"
+    "SELECT IDENTIFIER_TOKEN(name) SPLICE IDENTIFIER_TOKEN(age) FROM IDENTIFIER_TOKEN(users) CREATE TABLE DROP TABLE"
   );
 }
 
 void lexTestInsert1(){
   assertLex(
     "insert into users (name, age) values ('bob', 20)",
-    "INSERT_TOKEN INTO_TOKEN IDENTIFIER_TOKEN(users) LEFTP_TOKEN IDENTIFIER_TOKEN(name) SPLICE_TOKEN IDENTIFIER_TOKEN(age) RIGHTP_TOKEN VALUE_TOKEN LEFTP_TOKEN IDENTIFIER_TOKEN('bob') SPLICE_TOKEN IDENTIFIER_TOKEN(20) RIGHTP_TOKEN"
+    "INSERT INTO IDENTIFIER_TOKEN(users) LEFTP IDENTIFIER_TOKEN(name) SPLICE IDENTIFIER_TOKEN(age) RIGHTP VALUES LEFTP IDENTIFIER_TOKEN('bob') SPLICE IDENTIFIER_TOKEN(20) RIGHTP"
   );
 }
 

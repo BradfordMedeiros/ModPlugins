@@ -10,31 +10,13 @@
 #include <stdio.h>
 #include "./util.h"
 
-struct SelectToken {};
-struct CreateToken {};
-struct DropToken {};
-struct ShowToken{};
-struct DescribeToken{};
-struct TableToken {};
-struct TablesToken {};
-struct FromToken {};
-struct SpliceToken {};
-struct InsertToken {};
-struct IntoToken {};
-struct ValuesToken {};
-struct LeftParenthesisToken {};
-struct RightParenthesisToken {};
-
+struct SymbolToken{
+  std::string name;
+};
 struct IdentifierToken{
   std::string content;
 };
-typedef std::variant<
-  SelectToken, CreateToken, DropToken, TableToken, TablesToken, FromToken, 
-  IdentifierToken, 
-  SpliceToken, LeftParenthesisToken, RightParenthesisToken,
-  InsertToken, IntoToken, ValuesToken,
-  ShowToken, DescribeToken
-> LexTokens;
+typedef std::variant<SymbolToken, IdentifierToken> LexTokens;
 
 std::string tokenTypeStr(std::vector<LexTokens> tokens, bool includeContent);
 std::vector<LexTokens> lex(std::string value);

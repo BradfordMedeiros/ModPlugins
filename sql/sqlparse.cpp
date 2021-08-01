@@ -6,41 +6,10 @@ std::string toUpper(std::string s){
 }
 
 std::string tokenTypeStr(LexTokens token, bool includeContent){
-  auto selectToken = std::get_if<SelectToken>(&token);
-  if (selectToken != NULL){
-    return "SELECT_TOKEN"; 
+  auto symbolToken = std::get_if<SymbolToken>(&token);
+  if (symbolToken != NULL){
+    return symbolToken -> name; 
   }
-
-  auto fromToken = std::get_if<FromToken>(&token);
-  if (fromToken != NULL){
-    return "FROM_TOKEN";
-  }
-
-  auto spliceToken = std::get_if<SpliceToken>(&token);
-  if (spliceToken != NULL){
-    return "SPLICE_TOKEN";
-  }
-
-  auto createToken = std::get_if<CreateToken>(&token);
-  if (createToken != NULL){
-    return "CREATE_TOKEN";
-  }
-
-  auto dropToken = std::get_if<DropToken>(&token);
-  if (dropToken != NULL){
-    return "DROP_TOKEN";
-  }
-
-  auto tableToken = std::get_if<TableToken>(&token);
-  if (tableToken != NULL){
-    return "TABLE_TOKEN";
-  }
-
-  auto tablesToken = std::get_if<TablesToken>(&token);
-  if (tablesToken != NULL){
-    return "TABLES_TOKEN";
-  }
-
   auto identifierToken = std::get_if<IdentifierToken>(&token);
   if (identifierToken != NULL){
     std::string result =  "IDENTIFIER_TOKEN";
@@ -48,36 +17,6 @@ std::string tokenTypeStr(LexTokens token, bool includeContent){
       result = result + "(" + identifierToken -> content + ")";
     }
     return result;
-  }
-
-  auto leftParenthesisToken = std::get_if<LeftParenthesisToken>(&token);
-  if (leftParenthesisToken != NULL){
-    return "LEFTP_TOKEN";
-  }
-  auto rightParenthesisToken = std::get_if<RightParenthesisToken>(&token);
-  if (rightParenthesisToken != NULL){
-    return "RIGHTP_TOKEN";
-  }
-  auto insertToken = std::get_if<InsertToken>(&token);
-  if (insertToken != NULL){
-    return "INSERT_TOKEN";
-  }
-  auto intoToken = std::get_if<IntoToken>(&token);
-  if (intoToken != NULL){
-    return "INTO_TOKEN";
-  }
-  auto valueToken = std::get_if<ValuesToken>(&token);
-  if (valueToken != NULL){
-    return "VALUE_TOKEN";
-  }
-
-  auto showToken = std::get_if<ShowToken>(&token);
-  if (showToken != NULL){
-    return "SHOW_TOKEN";
-  }
-  auto describeToken = std::get_if<DescribeToken>(&token);
-  if (describeToken != NULL){
-    return "DESCRIBE_TOKEN";
   }
 
   assert(false);
@@ -146,6 +85,10 @@ std::vector<TokenResult> tokenize(std::string str, std::vector<char> delimiters)
   return result;
 }
 
+
+std::vector<const char*> validSymbols = {
+  "SELECT", "FROM", "CREATE", "DROP", "TABLE", "SHOW", "TABLES", "VALUES", "INSERT", "INTO", "DESCRIBE", "GROUP", "BY"
+};
 std::vector<LexTokens> lex(std::string value){
   std::vector<LexTokens> lexTokens;
   std::vector<TokenResult> filteredTokens;
@@ -158,44 +101,32 @@ std::vector<LexTokens> lex(std::string value){
   for (auto token : filteredTokens){
     if (token.isDelimiter){
       if (token.delimiter == ','){
-        lexTokens.push_back(SpliceToken{});
+        lexTokens.push_back(SymbolToken { .name = "SPLICE" });
       }else if (token.delimiter == '('){
-        lexTokens.push_back(LeftParenthesisToken{});
+        lexTokens.push_back(SymbolToken { .name = "LEFTP" });
       }else if (token.delimiter == ')'){
-        lexTokens.push_back(RightParenthesisToken{});
+        lexTokens.push_back(SymbolToken { .name = "RIGHTP" });
       }else{
         std::cout << "delimiter: " << token.delimiter << std::endl;
         assert(false);
       }
     }else{
-      if (toUpper(token.token) == "SELECT"){
-        lexTokens.push_back(SelectToken{});
-      }else if (toUpper(token.token) == "FROM"){
-        lexTokens.push_back(FromToken{});
-      }else if (toUpper(token.token) == "CREATE"){
-        lexTokens.push_back(CreateToken{});
-      }else if (toUpper(token.token) == "DROP"){
-        lexTokens.push_back(DropToken{});
-      }else if (toUpper(token.token) == "TABLE"){
-        lexTokens.push_back(TableToken{});
-      }else if (toUpper(token.token) == "SHOW"){
-        lexTokens.push_back(ShowToken{});
-      }else if (toUpper(token.token) == "TABLES"){
-        lexTokens.push_back(TablesToken{});
-      }else if (toUpper(token.token) == "VALUES"){
-        lexTokens.push_back(ValuesToken{});
-      }else if (toUpper(token.token) == "INSERT"){
-        lexTokens.push_back(InsertToken{});
-      }else if (toUpper(token.token) == "INTO"){
-        lexTokens.push_back(IntoToken{});
-      }else if (toUpper(token.token) == "DESCRIBE"){
-        lexTokens.push_back(DescribeToken{});
-      }else if (isIdentifier(token.token)){
-        lexTokens.push_back(IdentifierToken{
-          .content = token.token,
-        });
-      }else{
-        assert(false);
+      bool isSymbol = false;
+      for (auto validSymbol : validSymbols){
+        if (toUpper(token.token) == validSymbol){
+          lexTokens.push_back(SymbolToken { .name = validSymbol });
+          isSymbol = true;
+          break;
+        }
+      }
+      if (!isSymbol){
+        if (isIdentifier(token.token)){
+          lexTokens.push_back(IdentifierToken{
+            .content = token.token,
+          });
+        }else{
+          assert(false);
+        }
       }
     }
   }
@@ -214,48 +145,48 @@ struct TokenState {
 std::map<std::string, TokenState> machine = {
   {"start", TokenState{
     .nextStates = {
-      NextState { .token = "CREATE_TOKEN", .stateSuffix = "" }, 
-      NextState { .token = "DROP_TOKEN", .stateSuffix = "" },
-      NextState { .token = "SELECT_TOKEN", .stateSuffix = "" },
-      NextState { .token = "SHOW_TOKEN", .stateSuffix = "" },\
-      NextState { .token = "DESCRIBE_TOKEN", .stateSuffix = "" },\
+      NextState { .token = "CREATE", .stateSuffix = "" }, 
+      NextState { .token = "DROP", .stateSuffix = "" },
+      NextState { .token = "SELECT", .stateSuffix = "" },
+      NextState { .token = "SHOW", .stateSuffix = "" },\
+      NextState { .token = "DESCRIBE", .stateSuffix = "" },\
     },
     .fn = [](SqlQuery& query, LexTokens* token) -> void {},
   }},
-  {"CREATE_TOKEN", TokenState{ 
+  {"CREATE", TokenState{ 
     .nextStates = { 
-      NextState { .token = "TABLE_TOKEN", .stateSuffix = "" },
+      NextState { .token = "TABLE", .stateSuffix = "" },
     },
     .fn = [](SqlQuery& query, LexTokens* token) -> void {
       query.type = SQL_CREATE_TABLE;
       query.queryData = SqlCreate{};
     },
   }},
-  {"DROP_TOKEN", TokenState{ 
+  {"DROP", TokenState{ 
     .nextStates = { 
-      NextState { .token = "TABLE_TOKEN", .stateSuffix = "" },
+      NextState { .token = "TABLE", .stateSuffix = "" },
     }, 
     .fn = [](SqlQuery& query, LexTokens* token) -> void {
       query.type = SQL_DELETE_TABLE;
       query.queryData = SqlDelete{};
     },
   }},
-  {"TABLE_TOKEN", TokenState{ 
+  {"TABLE", TokenState{ 
     .nextStates = { 
       NextState { .token = "IDENTIFIER_TOKEN", .stateSuffix = "table" },
     }, 
     .fn = [](SqlQuery& query, LexTokens* token) -> void {},
   }},
-  {"SHOW_TOKEN", TokenState{
+  {"SHOW", TokenState{
     .nextStates = { 
-      NextState { .token = "TABLES_TOKEN", .stateSuffix = "" },
+      NextState { .token = "TABLES", .stateSuffix = "" },
     }, 
     .fn = [](SqlQuery& query, LexTokens* token) -> void {
       query.type = SQL_SHOW_TABLES;
       query.queryData = SqlShowTables{};
     },
   }},
-  {"TABLES_TOKEN", TokenState{ 
+  {"TABLES", TokenState{ 
     .nextStates = { 
       NextState { .token = "*END*", .stateSuffix = "" },
     }, 
@@ -271,7 +202,7 @@ std::map<std::string, TokenState> machine = {
       query.table = identifier -> content;
     },
   }},
-  {"SELECT_TOKEN", TokenState{ 
+  {"SELECT", TokenState{ 
     .nextStates = { 
       NextState { .token = "IDENTIFIER_TOKEN", .stateSuffix = "select" },
     },
@@ -282,8 +213,8 @@ std::map<std::string, TokenState> machine = {
   }},
   {"IDENTIFIER_TOKEN:select", TokenState{ 
     .nextStates = { 
-      NextState { .token = "SPLICE_TOKEN", .stateSuffix = "" },
-      NextState { .token = "FROM_TOKEN", .stateSuffix = "" },
+      NextState { .token = "SPLICE", .stateSuffix = "" },
+      NextState { .token = "FROM", .stateSuffix = "" },
 
     },
     .fn = [](SqlQuery& query, LexTokens* token) -> void {
@@ -294,13 +225,13 @@ std::map<std::string, TokenState> machine = {
       selectQuery -> columns.push_back(identifierToken -> content);
     },
   }},
-  {"SPLICE_TOKEN", TokenState{ 
+  {"SPLICE", TokenState{ 
     .nextStates = { 
       NextState { .token = "IDENTIFIER_TOKEN", .stateSuffix = "select" },
     },
     .fn = [](SqlQuery& query, LexTokens* token) -> void {},
   }},
-  {"FROM_TOKEN", TokenState{ 
+  {"FROM", TokenState{ 
     .nextStates = { 
       NextState { .token = "IDENTIFIER_TOKEN", .stateSuffix = "tableselect" },
     },
@@ -316,7 +247,7 @@ std::map<std::string, TokenState> machine = {
       query.table = identifierToken -> content;
     },
   }},
-  {"DESCRIBE_TOKEN", TokenState{ 
+  {"DESCRIBE", TokenState{ 
     .nextStates = { 
       NextState { .token = "IDENTIFIER_TOKEN", .stateSuffix = "" },
     },
