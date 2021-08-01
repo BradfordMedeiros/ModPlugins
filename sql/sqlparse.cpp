@@ -205,6 +205,7 @@ std::map<std::string, TokenState> machine = {
     },
     .fn = [](SqlQuery& query, LexTokens* token) -> void {
       query.type = SQL_CREATE_TABLE;
+      query.queryData = SqlCreate{};
     },
   }},
   {"DROP_TOKEN", TokenState{ 
@@ -213,6 +214,7 @@ std::map<std::string, TokenState> machine = {
     }, 
     .fn = [](SqlQuery& query, LexTokens* token) -> void {
       query.type = SQL_DELETE_TABLE;
+      query.queryData = SqlDelete{};
     },
   }},
   {"TABLE_TOKEN", TokenState{ 

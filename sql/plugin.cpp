@@ -86,7 +86,10 @@ int main(int argc, char *argv[]){
       }
       auto sqlQuery = compileSqlQuery(value);
       if(sqlQuery.validQuery){
-        executeSqlQuery(sqlQuery);
+        auto rows = executeSqlQuery(sqlQuery);
+        for (auto row : rows){
+          std::cout << join(row, ' ') << std::endl;
+        }
       }else{
         std::cout << "Invalid query: " << value << std::endl;
       }
