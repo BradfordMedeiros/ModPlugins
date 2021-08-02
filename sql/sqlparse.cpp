@@ -147,6 +147,43 @@ struct TokenState {
   std::function<void(SqlQuery&, LexTokens*)> fn;
 };
 
+auto machineTransitions = ""
+"start describe\n"
+"describe tables describe\n"
+"tables:describe *END*\n"
+
+"start show\n"
+"show tables show\n"
+"tables:show *END*\n"
+"";
+
+std::map<std::string, TokenState> createMachine(std::string transitionsStr){
+  std::map<std::string, TokenState> machine;
+  auto transitions = split(transitionsStr, '\n');
+  for (auto transition : transitions){
+    auto allTransitions = split(transition, ' ');
+    assert(allTransitions.size() == 2 || allTransitions.size() == 3);
+    auto machineName = allTransitions.at(0);
+    if (machine.find(machineName) == machine.end()){
+      machine[machineName] = TokenState{ 
+        .nextStates = {},
+        .fn = [](SqlQuery& query, LexTokens* token) -> void {},
+      };
+    }
+    machine.at(machineName).nextStates.push_back(NextState{
+      .token = allTransitions.at(1),
+      .stateSuffix = allTransitions.size() > 2 ? allTransitions.at(2) : "",
+    });
+  }
+  return machine;
+}
+
+std::map<std::string, std::function<void(SqlQuery&, LexTokens* token)>> machineFns {
+  { {"start"}, [](SqlQuery&, LexTokens* token) -> void {
+    std::cout << "machine start!" << std::endl;
+  }}
+};
+
 std::map<std::string, TokenState> machine = {
   {"start", TokenState{
     .nextStates = {
