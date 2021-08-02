@@ -153,6 +153,7 @@ auto machineTransitions = ""
 "start SELECT\n"
 "start SHOW\n"
 "start DESCRIBE\n"
+"start INSERT\n"
 
 "CREATE TABLE\n"
 "DROP TABLE\n"
@@ -177,6 +178,17 @@ auto machineTransitions = ""
 "IDENTIFIER_TOKEN:whereselect2 LIMIT tableselect\n"
 "LIMIT:tableselect IDENTIFIER_TOKEN limit_tableselect\n"
 "IDENTIFIER_TOKEN:limit_tableselect *END*\n"
+
+"INSERT INTO\n"
+"INTO IDENTIFIER_TOKEN tableinsert\n"
+"IDENTIFIER_TOKEN:tableinsert LEFTP tableinsert\n"
+"LEFTP:tableinsert IDENTIFIER_TOKEN tableinsertcolname\n"
+"IDENTIFIER_TOKEN:tableinsertcolname RIGHTP tableinsertcolname\n"
+"RIGHTP:tableinsertcolname VALUES\n"
+"VALUES LEFTP tableinsert_v\n"
+"LEFTP:tableinsert_v IDENTIFIER_TOKEN tableinsert_v\n"
+"IDENTIFIER_TOKEN:tableinsert_v RIGHTP tableinsert_v\n"
+"RIGHTP:tableinsert_v *END*\n"
 
 "DESCRIBE IDENTIFIER_TOKEN describe\n"
 "IDENTIFIER_TOKEN:describe *END*\n"
@@ -251,6 +263,30 @@ std::map<std::string, std::function<void(SqlQuery&, LexTokens* token)>> machineF
       assert(identifierToken != NULL);
       query.table = identifierToken -> content;
   }},
+  {"INSERT", [](SqlQuery& query, LexTokens* token) -> void {
+      query.type = SQL_INSERT;
+      query.queryData = SqlInsert{};
+  }},
+  {"IDENTIFIER_TOKEN:tableinsert", [](SqlQuery& query, LexTokens* token) -> void {
+      auto identifierToken = std::get_if<IdentifierToken>(token);
+      assert(identifierToken != NULL);
+      query.table = identifierToken -> content;
+  }},
+  {"IDENTIFIER_TOKEN:tableinsertcolname", [](SqlQuery& query, LexTokens* token) -> void {
+      auto insertQuery = std::get_if<SqlInsert>(&query.queryData);
+      assert(insertQuery != NULL);
+      auto identifierToken = std::get_if<IdentifierToken>(token);
+      assert(identifierToken != NULL);
+      insertQuery -> columns.push_back(identifierToken -> content);   
+  }},
+  {"IDENTIFIER_TOKEN:tableinsert_v", [](SqlQuery& query, LexTokens* token) -> void {
+      auto insertQuery = std::get_if<SqlInsert>(&query.queryData);
+      assert(insertQuery != NULL);
+      auto identifierToken = std::get_if<IdentifierToken>(token);
+      assert(identifierToken != NULL);
+      insertQuery -> values.push_back(identifierToken -> content);   
+  }}
+
 };
 
 std::map<std::string, TokenState> createMachine(std::string transitionsStr, std::map<std::string, std::function<void(SqlQuery&, LexTokens* token)>>& fns){

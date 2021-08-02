@@ -112,7 +112,7 @@ std::string findValue(std::string columnToFind, std::vector<std::string>& column
       return values.at(i);
     }
   }
-  return "";
+  return "NULL";
 }
 
 std::string createRow(std::vector<std::string> values){
@@ -120,6 +120,7 @@ std::string createRow(std::vector<std::string> values){
 }
 
 void insert(std::string tableName, std::vector<std::string> columns, std::vector<std::string> values){
+  assert(columns.size() == values.size());
   auto header = readTableData(tableName).header;
   auto indexs = getColumnIndexs(header, columns);
 
