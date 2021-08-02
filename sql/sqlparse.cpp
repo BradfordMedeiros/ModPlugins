@@ -87,7 +87,8 @@ std::vector<TokenResult> tokenize(std::string str, std::vector<char> delimiters)
 
 
 std::vector<const char*> validSymbols = {
-  "SELECT", "FROM", "CREATE", "DROP", "TABLE", "SHOW", "TABLES", "VALUES", "INSERT", "INTO", "DESCRIBE", "GROUP", "BY", "LIMIT", "WHERE"
+  "SELECT", "FROM", "CREATE", "DROP", "TABLE", "SHOW", "TABLES", "VALUES", 
+  "INSERT", "INTO", "DESCRIBE", "GROUP", "BY", "LIMIT", "WHERE", "UPDATE", "SET",
 }; 
 
 std::vector<LexTokens> lex(std::string value){
@@ -154,6 +155,7 @@ auto machineTransitions = ""
 "start SHOW\n"
 "start DESCRIBE\n"
 "start INSERT\n"
+"start UPDATE\n"
 
 "CREATE TABLE\n"
 "DROP TABLE\n"
@@ -193,6 +195,14 @@ auto machineTransitions = ""
 "DESCRIBE IDENTIFIER_TOKEN describe\n"
 "IDENTIFIER_TOKEN:describe *END*\n"
 
+"UPDATE IDENTIFIER_TOKEN tableupdate\n"
+"IDENTIFIER_TOKEN:tableupdate SET\n"
+"SET IDENTIFIER_TOKEN tableupdate_col\n"
+"IDENTIFIER_TOKEN:tableupdate_col EQUAL tableupdate_val\n"
+"IDENTIFIER_TOKEN:tableupdate_val WHERE tableupdate\n"
+"WHERE:tableupdate IDENTIFIER_TOKEN tableupdatef_col\n"
+"IDENTIFIER_TOKEN:tableupdatef_col EQUAL tableupdatef_col\n"
+"EQUAL:tableupdatef_col IDENTIFIER tableupdatef_val\n"
 "";
 
 std::map<std::string, std::function<void(SqlQuery&, LexTokens* token)>> machineFns {
