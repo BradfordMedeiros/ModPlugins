@@ -168,7 +168,13 @@ auto machineTransitions = ""
 "SPLICE IDENTIFIER_TOKEN select\n"
 "FROM IDENTIFIER_TOKEN tableselect\n"
 "IDENTIFIER_TOKEN:tableselect LIMIT tableselect\n"
+"IDENTIFIER_TOKEN:tableselect WHERE tableselect\n"
 "IDENTIFIER_TOKEN:tableselect *END*\n"
+"WHERE:tableselect IDENTIFIER_TOKEN whereselect\n"
+"IDENTIFIER_TOKEN:whereselect EQUAL whereselect\n"
+"EQUAL:whereselect IDENTIFIER_TOKEN whereselect2\n"
+"IDENTIFIER_TOKEN:whereselect2 *END*\n"
+"IDENTIFIER_TOKEN:whereselect2 LIMIT tableselect\n"
 "LIMIT:tableselect IDENTIFIER_TOKEN limit_tableselect\n"
 "IDENTIFIER_TOKEN:limit_tableselect *END*\n"
 
@@ -219,6 +225,22 @@ std::map<std::string, std::function<void(SqlQuery&, LexTokens* token)>> machineF
       SqlSelect* selectQuery = std::get_if<SqlSelect>(&query.queryData);
       assert(selectQuery != NULL);
       selectQuery -> limit = std::atoi(identifierToken -> content.c_str()); // strong typing should occur earlier
+  }},
+  {"IDENTIFIER_TOKEN:whereselect", [](SqlQuery& query, LexTokens* token) -> void {
+      auto identifierToken = std::get_if<IdentifierToken>(token);
+      assert(identifierToken != NULL);
+      SqlSelect* selectQuery = std::get_if<SqlSelect>(&query.queryData);
+      assert(selectQuery != NULL);
+      selectQuery -> filter.hasFilter = true;
+      selectQuery -> filter.column = identifierToken -> content;
+  }},
+  {"IDENTIFIER_TOKEN:whereselect2", [](SqlQuery& query, LexTokens* token) -> void {
+      auto identifierToken = std::get_if<IdentifierToken>(token);
+      assert(identifierToken != NULL);
+      SqlSelect* selectQuery = std::get_if<SqlSelect>(&query.queryData);
+      assert(selectQuery != NULL);
+      selectQuery -> filter.hasFilter = true;
+      selectQuery -> filter.value = identifierToken -> content;
   }},
   {"DESCRIBE", [](SqlQuery& query, LexTokens* token) -> void {
       query.type = SQL_DESCRIBE;
