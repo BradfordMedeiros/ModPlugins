@@ -131,8 +131,7 @@ void insert(std::string tableName, std::vector<std::string> columns, std::vector
   appendFile(tablePath(tableName), createRow(valuesToInsert));
 }
 
-void update(std::string tableName, std::vector<std::string>& columns, std::vector<std::string>& values, SqlFilter& filter){
-  assert(filter.hasFilter);
+void update(std::string tableName, std::vector<std::string>& columns, std::vector<std::string>& values){
   auto tableData = readTableData(tableName);
   auto allRows = select(tableName, tableData.header, SqlFilter{ .hasFilter = false }, -1);
 
@@ -181,7 +180,7 @@ std::vector<std::vector<std::string>> executeSqlQuery(SqlQuery& query){
     std::cout << "sql update query" << std::endl;
     auto updateData = std::get_if<SqlUpdate>(&query.queryData);
     assert(updateData != NULL);
-    update(query.table, updateData -> columns, updateData -> values, updateData -> filter);
+    update(query.table, updateData -> columns, updateData -> values);
     return {};
   }else if (query.type == SQL_DELETE){
     std::cout << "sql delete query" << std::endl;

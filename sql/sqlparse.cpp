@@ -199,10 +199,15 @@ auto machineTransitions = ""
 "IDENTIFIER_TOKEN:tableupdate SET\n"
 "SET IDENTIFIER_TOKEN tableupdate_col\n"
 "IDENTIFIER_TOKEN:tableupdate_col EQUAL tableupdate_val\n"
+"EQUAL:tableupdate_val IDENTIFIER_TOKEN tableupdate_val\n"
+"IDENTIFIER_TOKEN:tableupdate_val *END*\n"
+"IDENTIFIER_TOKEN:tableupdate_val SPLICE tableupdate_val\n"
+"SPLICE:tableupdate_val IDENTIFIER_TOKEN tableupdate_col\n"
 "IDENTIFIER_TOKEN:tableupdate_val WHERE tableupdate\n"
 "WHERE:tableupdate IDENTIFIER_TOKEN tableupdatef_col\n"
 "IDENTIFIER_TOKEN:tableupdatef_col EQUAL tableupdatef_col\n"
-"EQUAL:tableupdatef_col IDENTIFIER tableupdatef_val\n"
+"EQUAL:tableupdatef_col IDENTIFIER_TOKEN tableupdatef_val\n"
+"IDENTIFIER_TOKEN:tableupdatef_val *END*"
 "";
 
 std::map<std::string, std::function<void(SqlQuery&, LexTokens* token)>> machineFns {
@@ -295,7 +300,47 @@ std::map<std::string, std::function<void(SqlQuery&, LexTokens* token)>> machineF
       auto identifierToken = std::get_if<IdentifierToken>(token);
       assert(identifierToken != NULL);
       insertQuery -> values.push_back(identifierToken -> content);   
-  }}
+  }},
+
+  {"IDENTIFIER_TOKEN:tableupdate", [](SqlQuery& query, LexTokens* token) -> void {
+    auto identifierToken = std::get_if<IdentifierToken>(token);
+    assert(identifierToken != NULL);
+    query.table = identifierToken -> content;
+    query.type = SQL_UPDATE;
+    query.queryData = SqlUpdate{};
+  }},
+  {"IDENTIFIER_TOKEN:tableupdate_col", [](SqlQuery& query, LexTokens* token) -> void {
+    auto updateQuery = std::get_if<SqlUpdate>(&query.queryData);
+    assert(updateQuery != NULL);
+    auto identifierToken = std::get_if<IdentifierToken>(token);
+    assert(identifierToken != NULL);
+    updateQuery -> columns.push_back(identifierToken -> content);   
+  }},
+  {"IDENTIFIER_TOKEN:tableupdate_val", [](SqlQuery& query, LexTokens* token) -> void {
+    auto updateQuery = std::get_if<SqlUpdate>(&query.queryData);
+    assert(updateQuery != NULL);
+    auto identifierToken = std::get_if<IdentifierToken>(token);
+    assert(identifierToken != NULL);
+    updateQuery -> values.push_back(identifierToken -> content);   
+  }},
+  {"IDENTIFIER_TOKEN:tableupdatef_col", [](SqlQuery& query, LexTokens* token) -> void {
+    auto updateQuery = std::get_if<SqlUpdate>(&query.queryData);
+    assert(updateQuery != NULL);
+    auto identifierToken = std::get_if<IdentifierToken>(token);
+    assert(identifierToken != NULL);
+    updateQuery -> values.push_back(identifierToken -> content);   
+    updateQuery -> filter.hasFilter = true;
+    updateQuery -> filter.column = identifierToken -> content;
+  }},
+  {"IDENTIFIER_TOKEN:tableupdatef_val", [](SqlQuery& query, LexTokens* token) -> void {
+    auto updateQuery = std::get_if<SqlUpdate>(&query.queryData);
+    assert(updateQuery != NULL);
+    auto identifierToken = std::get_if<IdentifierToken>(token);
+    assert(identifierToken != NULL);
+    updateQuery -> values.push_back(identifierToken -> content);   
+    updateQuery -> filter.hasFilter = true;
+    updateQuery -> filter.value = identifierToken -> content;
+  }},
 
 };
 

@@ -137,4 +137,14 @@ void testCompileSqlSelect(){
   assert(queryData -> columns.at(1) == "age");
 }
 
+void testCompileSqlUpdate(){
+  auto sqlQuery1 = compileSqlQuery("update atable set name = nonamehere");
+  assert(sqlQuery1.validQuery);
+  assert(sqlQuery1.type == SQL_UPDATE);
+  assert(sqlQuery1.table == "atable");
+  auto queryData = std::get_if<SqlUpdate>(&(sqlQuery1.queryData));
+  assert(queryData != NULL);
+  assert(queryData -> columns.at(0) == "name");
+  assert(queryData -> values.at(0) == "nonamehere");
+}
 
