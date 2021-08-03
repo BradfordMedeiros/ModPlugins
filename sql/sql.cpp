@@ -109,8 +109,17 @@ std::vector<std::vector<std::string>> select(std::string tableName, std::vector<
       std::cout << col << " ";
     }
     std::cout << std::endl;
-    std::sort (rows.begin(), rows.end(), [](std::vector<std::string>& row1, std::vector<std::string>& row2) -> bool {
-      return false;
+    auto indexs = getColumnIndexs(tableData.header, orderBy.cols);
+    std::sort (rows.begin(), rows.end(), [&indexs](std::vector<std::string>& row1, std::vector<std::string>& row2) -> bool {
+      for (auto index : indexs){
+        auto value = strcmp(row1.at(index).c_str(), row2.at(index).c_str());
+        if (value > 0){
+          return false;
+        }else if (value < 0){
+          return true;
+        }
+      }
+      return true;
     });
   }
   return rows;
