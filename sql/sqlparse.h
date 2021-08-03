@@ -39,11 +39,16 @@ struct SqlFilter {
   std::string value;
   bool invert;
 };
+struct SqlOrderBy {
+  std::vector<std::string> cols;
+  std::vector<bool> isDesc;
+};
 
 struct SqlSelect {
   std::vector<std::string> columns;
   int limit;
   SqlFilter filter;
+  SqlOrderBy orderBy;
 };
 struct SqlInsert {
   std::vector<std::string> columns;

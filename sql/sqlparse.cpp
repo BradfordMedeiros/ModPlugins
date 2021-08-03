@@ -89,6 +89,7 @@ std::vector<TokenResult> tokenize(std::string str, std::vector<char> delimiters)
 std::vector<const char*> validSymbols = {
   "SELECT", "FROM", "CREATE", "DROP", "TABLE", "SHOW", "TABLES", "VALUES", 
   "INSERT", "INTO", "DESCRIBE", "GROUP", "BY", "LIMIT", "WHERE", "UPDATE", "SET",
+  "ORDER",
 }; 
 
 std::vector<LexTokens> lex(std::string value){
@@ -172,6 +173,12 @@ auto machineTransitions = ""
 "FROM IDENTIFIER_TOKEN tableselect\n"
 "IDENTIFIER_TOKEN:tableselect LIMIT tableselect\n"
 "IDENTIFIER_TOKEN:tableselect WHERE tableselect\n"
+"IDENTIFIER_TOKEN:tableselect ORDER\n"
+"ORDER BY tableorderby\n"
+"BY:tableorderby IDENTIFIER_TOKEN orderby\n"
+"IDENTIFIER_TOKEN:orderby *END*\n"
+"IDENTIFIER_TOKEN:orderby SPLICE orderbycomma\n"
+"SPLICE:orderbycomma IDENTIFIER_TOKEN orderby\n"
 "IDENTIFIER_TOKEN:tableselect *END*\n"
 "WHERE:tableselect IDENTIFIER_TOKEN whereselect\n"
 "IDENTIFIER_TOKEN:whereselect EQUAL whereselect\n"
@@ -269,6 +276,14 @@ std::map<std::string, std::function<void(SqlQuery&, LexTokens* token)>> machineF
       selectQuery -> filter.hasFilter = true;
       selectQuery -> filter.value = identifierToken -> content;
   }},
+  {"IDENTIFIER_TOKEN:orderby", [](SqlQuery& query, LexTokens* token) -> void {
+    auto identifierToken = std::get_if<IdentifierToken>(token);
+    assert(identifierToken != NULL);
+    SqlSelect* selectQuery = std::get_if<SqlSelect>(&query.queryData);
+    assert(selectQuery != NULL);
+    selectQuery -> orderBy.cols.push_back(identifierToken -> content);
+    selectQuery -> orderBy.isDesc.push_back(false);
+  }},
   {"DESCRIBE", [](SqlQuery& query, LexTokens* token) -> void {
       query.type = SQL_DESCRIBE;
       query.queryData = SqlDescribe{};
@@ -282,6 +297,7 @@ std::map<std::string, std::function<void(SqlQuery&, LexTokens* token)>> machineF
       query.type = SQL_INSERT;
       query.queryData = SqlInsert{};
   }},
+
   {"IDENTIFIER_TOKEN:tableinsert", [](SqlQuery& query, LexTokens* token) -> void {
       auto identifierToken = std::get_if<IdentifierToken>(token);
       assert(identifierToken != NULL);
