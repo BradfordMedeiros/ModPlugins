@@ -137,7 +137,7 @@ void update(std::string tableName, std::vector<std::string>& columns, std::vecto
 
   std::string content = createHeader(tableData.header);
   for (auto row : allRows){
-    if (filter.column == row.at(0) && filter.value == row.at(1)){ // this is wrong
+    if (false){ // this is wrong
       content = content + "this one should be updated\n";
     }else{
       content = content + createRow(row);
