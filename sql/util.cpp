@@ -5,7 +5,6 @@ std::vector<std::string> listAllCsvFilesStems(std::filesystem::path path) {
   std::vector<std::string> files;
   for(auto &file: std::filesystem::recursive_directory_iterator(path)) {
     if (!std::filesystem::is_directory(file)) {
-      std::cout << "extension: " << file.path().extension() << std::endl;
       if (file.path().extension() == ".csv"){
         files.push_back(file.path().stem());
       }

@@ -16,12 +16,10 @@ std::string createHeader(std::vector<std::string> columns){
 
 void createTable(std::string tableName, std::vector<std::string> columns){
   auto filepath = tablePath(tableName);
-  std::cout << "creating: " << tableName << "-- " << join(columns, ',') << " backed by: " << filepath << std::endl;
   saveFile(filepath, createHeader(columns));
 }
 void deleteTable(std::string tableName){
   auto filepath = tablePath(tableName);
-  std::cout << "deleting: " << tableName << " backed by: " << filepath << std::endl;
   std::remove(filepath.c_str());
 }
 
@@ -110,15 +108,23 @@ std::vector<std::vector<std::string>> select(std::string tableName, std::vector<
     }
     std::cout << std::endl;
     auto indexs = getColumnIndexs(tableData.header, orderBy.cols);
+
+    // This is wrong, because the row1/2 are reordered, not the original indexs 
+    // Additionally it doesn't even have the all the possible values that can be ordered by
     std::sort (rows.begin(), rows.end(), [&indexs](std::vector<std::string>& row1, std::vector<std::string>& row2) -> bool {
+      std::cout << "sorting by: ";
       for (auto index : indexs){
-        auto value = strcmp(row1.at(index).c_str(), row2.at(index).c_str());
+        std::cout << index << " ";
+        auto value = strcmp(row1.at(index).c_str(), row2.at(index).c_str()); // this is wrong because row is already the new one 
         if (value > 0){
+          std::cout << std::endl;
           return false;
         }else if (value < 0){
+          std::cout << std::endl;
           return true;
         }
       }
+      std::cout << std::endl;
       return true;
     });
   }
@@ -182,43 +188,35 @@ void deleteRows(std::string tableName, SqlFilter& filter){
 }
 
 std::vector<std::vector<std::string>> executeSqlQuery(SqlQuery& query){
-  std::cout << "executing sql query" << std::endl;
   assert(query.validQuery);
   if (query.type == SQL_SELECT){
-    std::cout << "sql select query" << std::endl;
     auto selectData = std::get_if<SqlSelect>(&query.queryData);
     assert(selectData != NULL);
     return select(query.table, selectData -> columns, selectData -> filter, selectData -> orderBy, selectData -> limit);
   }else if (query.type == SQL_INSERT){
-    std::cout << "sql insert query" << std::endl;
     auto insertData = std::get_if<SqlInsert>(&query.queryData);
     assert(insertData != NULL);
     insert(query.table, insertData -> columns, insertData -> values);
     return {};
   }else if (query.type == SQL_UPDATE){
-    std::cout << "sql update query" << std::endl;
     auto updateData = std::get_if<SqlUpdate>(&query.queryData);
     assert(updateData != NULL);
     update(query.table, updateData -> columns, updateData -> values);
     return {};
   }else if (query.type == SQL_DELETE){
-    std::cout << "sql delete query" << std::endl;
     auto deleteData = std::get_if<SqlDelete>(&query.queryData);
     assert(deleteData != NULL);
     deleteRows(query.table, deleteData -> filter);
     return {};
   }else if (query.type == SQL_CREATE_TABLE){
-    std::cout << "sql create table" << std::endl;
     auto createData = std::get_if<SqlCreate>(&query.queryData);
     assert(createData != NULL);
     createTable(query.table, createData -> columns);
     return {};
   }else if (query.type == SQL_DELETE_TABLE){
-    std::cout << "sql delete table" << std::endl;
     deleteTable(query.table);
     return {};
   }else if (query.type == SQL_DESCRIBE){
-    std::cout << "sql describe table" << std::endl;
     return describeTable(query.table);
   }else if (query.type == SQL_SHOW_TABLES){
     return showTables();
