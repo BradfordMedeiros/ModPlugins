@@ -163,6 +163,13 @@ auto machineTransitions = ""
 "CREATE TABLE\n"
 "TABLE IDENTIFIER_TOKEN table\n"
 "IDENTIFIER_TOKEN:table *END*\n"
+"IDENTIFIER_TOKEN:table LEFTP table\n"
+"LEFTP:table IDENTIFIER_TOKEN create_tablecol\n"
+"IDENTIFIER_TOKEN:create_tablecol SPLICE create_tablecol\n"
+"SPLICE:create_tablecol IDENTIFIER_TOKEN create_tablecol\n"
+"IDENTIFIER_TOKEN:create_tablecol RIGHTP create_tablecol\n"
+"RIGHTP:create_tablecol *END*\n"
+
 
 "DROP TABLE droptable\n"
 "TABLE:droptable IDENTIFIER_TOKEN droptable\n"
@@ -240,6 +247,13 @@ std::map<std::string, std::function<void(SqlQuery&, LexTokens* token)>> machineF
       auto identifier = std::get_if<IdentifierToken>(token);
       assert(identifier != NULL);
       query.table = identifier -> content;
+  }},
+  {"IDENTIFIER_TOKEN:create_tablecol", [](SqlQuery& query, LexTokens* token) -> void {
+      auto identifier = std::get_if<IdentifierToken>(token);
+      assert(identifier != NULL);
+      auto createQuery = std::get_if<SqlCreate>(&query.queryData);
+      assert(createQuery != NULL);
+      createQuery -> columns.push_back(identifier -> content);
   }},
   {"IDENTIFIER_TOKEN:droptable", [](SqlQuery& query, LexTokens* token) -> void {
       auto identifier = std::get_if<IdentifierToken>(token);
