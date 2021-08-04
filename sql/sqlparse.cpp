@@ -95,7 +95,7 @@ std::vector<const char*> validSymbols = {
 std::vector<LexTokens> lex(std::string value){
   std::vector<LexTokens> lexTokens;
   std::vector<TokenResult> filteredTokens;
-  for (auto token : tokenize(value, {' ', ',', '(', ')', '=', '"' })){
+  for (auto token : tokenize(value, {' ', ',', '(', ')', '=', '"', '\n', '\r' })){
     if (token.isDelimiter && token.delimiter == ' '){
       continue;
     }
@@ -113,6 +113,8 @@ std::vector<LexTokens> lex(std::string value){
         lexTokens.push_back(SymbolToken { .name = "EQUAL" });
       }else if (token.delimiter == '\"'){
         lexTokens.push_back(SymbolToken { .name = "QUOTE" });
+      }else if (token.delimiter == '\n' || token.delimiter == '\r'){
+        // do nothing, this just gets ignored
       }else{
         std::cout << "delimiter: " << token.delimiter << std::endl;
         assert(false);
