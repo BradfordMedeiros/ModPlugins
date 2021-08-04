@@ -214,6 +214,9 @@ auto machineTransitions = ""
 "IDENTIFIER_TOKEN:tableinsert_v SPLICE tableinsert_v\n"
 "SPLICE:tableinsert_v IDENTIFIER_TOKEN tableinsert_v\n"
 "RIGHTP:tableinsert_v *END*\n"
+"RIGHTP:tableinsert_v SPLICE tableinsert_new\n"
+"SPLICE:tableinsert_new LEFTP tableinsert_v\n"
+
 
 "DESCRIBE IDENTIFIER_TOKEN describe\n"
 "IDENTIFIER_TOKEN:describe *END*\n"
@@ -230,7 +233,7 @@ auto machineTransitions = ""
 "WHERE:tableupdate IDENTIFIER_TOKEN tableupdatef_col\n"
 "IDENTIFIER_TOKEN:tableupdatef_col EQUAL tableupdatef_col\n"
 "EQUAL:tableupdatef_col IDENTIFIER_TOKEN tableupdatef_val\n"
-"IDENTIFIER_TOKEN:tableupdatef_val *END*"
+"IDENTIFIER_TOKEN:tableupdatef_val *END*\n"
 "";
 
 void setTableName(SqlQuery& query, LexTokens* token){
