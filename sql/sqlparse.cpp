@@ -161,9 +161,12 @@ auto machineTransitions = ""
 "start UPDATE\n"
 
 "CREATE TABLE\n"
-"DROP TABLE\n"
 "TABLE IDENTIFIER_TOKEN table\n"
 "IDENTIFIER_TOKEN:table *END*\n"
+
+"DROP TABLE droptable\n"
+"TABLE:droptable IDENTIFIER_TOKEN droptable\n"
+"IDENTIFIER_TOKEN:droptable *END*\n"
 
 "SHOW TABLES\n"
 "TABLES *END*\n"
@@ -234,6 +237,11 @@ std::map<std::string, std::function<void(SqlQuery&, LexTokens* token)>> machineF
       query.queryData = SqlShowTables{};
   }},
   {"IDENTIFIER_TOKEN:table", [](SqlQuery& query, LexTokens* token) -> void {
+      auto identifier = std::get_if<IdentifierToken>(token);
+      assert(identifier != NULL);
+      query.table = identifier -> content;
+  }},
+  {"IDENTIFIER_TOKEN:droptable", [](SqlQuery& query, LexTokens* token) -> void {
       auto identifier = std::get_if<IdentifierToken>(token);
       assert(identifier != NULL);
       query.table = identifier -> content;
