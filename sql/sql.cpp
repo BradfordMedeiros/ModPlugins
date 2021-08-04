@@ -71,7 +71,10 @@ std::vector<int> getColumnIndexs(std::vector<std::string> header, std::vector<st
 
 std::vector<std::vector<std::string>> select(std::string tableName, std::vector<std::string> columns, SqlFilter filter, SqlOrderBy orderBy, int limit){
   auto tableData = readTableData(tableName);
+
   std::vector<std::vector<std::string>> rows;
+  std::vector<std::vector<std::string>> additionalOrderByRows;
+
 
   auto filterIndex = -1;
   if (filter.hasFilter){
@@ -80,11 +83,31 @@ std::vector<std::vector<std::string>> select(std::string tableName, std::vector<
 
   auto indexs = getColumnIndexs(tableData.header, columns);
 
+  auto orderByIndexs = getColumnIndexs(tableData.header, orderBy.cols);
+  std::vector<int> additionalIndexs;
+  for (auto orderIndex : orderByIndexs){
+    bool indexAlreadyIncluded = false;
+    for (auto index : indexs){
+      if (orderIndex == index){
+        indexAlreadyIncluded = true;
+        break;
+      }
+    }
+    if (!indexAlreadyIncluded){
+      additionalIndexs.push_back(orderIndex);
+    }
+  }
+
+
   for (int i = 1; i < tableData.rawRows.size(); i++){
     std::vector<std::string> row;
+    std::vector<std::string> orderByRow;
     auto columnContent = split(tableData.rawRows.at(i), ',');
     for (auto index : indexs){
       row.push_back(columnContent.at(index));
+    }
+    for (auto index : orderByIndexs){
+      orderByRow.push_back(columnContent.at(index));
     }
     if (filter.hasFilter){
       auto columnValue = columnContent.at(filterIndex);
@@ -99,6 +122,12 @@ std::vector<std::vector<std::string>> select(std::string tableName, std::vector<
       break;
     }
     rows.push_back(row);
+    additionalOrderByRows.push_back(orderByRow);
+  }
+
+  std::map<std::vector<std::string>*, std::vector<std::string>*> additionalMapping;
+  for (int i = 0; i < rows.size(); i++){
+    additionalMapping[&rows.at(i)] = &additionalOrderByRows.at(i);
   }
 
   if (orderBy.cols.size() > 0){
@@ -108,6 +137,7 @@ std::vector<std::vector<std::string>> select(std::string tableName, std::vector<
     }
     std::cout << std::endl;
     auto indexs = getColumnIndexs(tableData.header, orderBy.cols);
+
 
     // This is wrong, because the row1/2 are reordered, not the original indexs 
     // Additionally it doesn't even have the all the possible values that can be ordered by
