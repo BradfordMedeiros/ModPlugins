@@ -332,7 +332,19 @@ std::map<std::string, std::function<void(SqlQuery&, LexTokens* token)>> machineF
       assert(insertQuery != NULL);
       auto identifierToken = std::get_if<IdentifierToken>(token);
       assert(identifierToken != NULL);
-      insertQuery -> values.push_back(identifierToken -> content);   
+      bool hasSpace = true;
+      auto hasValue = insertQuery -> values.size() > 0;
+      if (!hasValue){
+        hasSpace = false;
+      }else{
+        auto lastValue = insertQuery -> values.at(insertQuery -> values.size() - 1);
+        hasSpace = lastValue.size() <= insertQuery -> columns.size() - 1;       
+      }
+      if (!hasSpace){
+        std::vector<std::string> value;
+        insertQuery -> values.push_back(value);
+      }
+      insertQuery -> values.at(insertQuery -> values.size() - 1).push_back(identifierToken -> content);
   }},
 
   {"IDENTIFIER_TOKEN:tableupdate", [](SqlQuery& query, LexTokens* token) -> void {

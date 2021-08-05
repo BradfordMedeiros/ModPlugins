@@ -52,7 +52,7 @@ struct SqlSelect {
 };
 struct SqlInsert {
   std::vector<std::string> columns;
-  std::vector<std::string> values;
+  std::vector<std::vector<std::string>> values;
   SqlFilter filter;
 };
 struct SqlCreate {

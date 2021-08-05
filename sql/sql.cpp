@@ -174,16 +174,21 @@ std::string createRow(std::vector<std::string> values){
   return join(values, ',') + "\n";
 }
 
-void insert(std::string tableName, std::vector<std::string> columns, std::vector<std::string> values){
-  assert(columns.size() == values.size());
+void insert(std::string tableName, std::vector<std::string> columns, std::vector<std::vector<std::string>> values){
   auto header = readTableData(tableName).header;
   auto indexs = getColumnIndexs(header, columns);
 
-  std::vector<std::string> valuesToInsert;
-  for (int i = 0; i < header.size(); i++){
-    valuesToInsert.push_back(findValue(header.at(i), columns, values));
+
+  std::string newContent = "";
+  for (auto value : values){
+    std::vector<std::string> valuesToInsert;
+    for (int i = 0; i < header.size(); i++){
+      assert(columns.size() == value.size());
+      valuesToInsert.push_back(findValue(header.at(i), columns, value));
+    }
+    newContent = newContent + createRow(valuesToInsert);
   }
-  appendFile(tablePath(tableName), createRow(valuesToInsert));
+  appendFile(tablePath(tableName), newContent);
 }
 
 void update(std::string tableName, std::vector<std::string>& columns, std::vector<std::string>& values){
