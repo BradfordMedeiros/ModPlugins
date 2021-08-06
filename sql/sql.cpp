@@ -71,10 +71,7 @@ std::vector<int> getColumnIndexs(std::vector<std::string> header, std::vector<st
 
 std::vector<std::vector<std::string>> select(std::string tableName, std::vector<std::string> columns, SqlFilter filter, SqlOrderBy orderBy, int limit){
   auto tableData = readTableData(tableName);
-
   std::vector<std::vector<std::string>> rows;
-  std::vector<std::vector<std::string>> additionalOrderByRows;
-
 
   auto filterIndex = -1;
   if (filter.hasFilter){
@@ -82,35 +79,36 @@ std::vector<std::vector<std::string>> select(std::string tableName, std::vector<
   }
 
   auto indexs = getColumnIndexs(tableData.header, columns);
-
-  auto orderByIndexs = getColumnIndexs(tableData.header, orderBy.cols);
-  std::vector<int> additionalIndexs;
-  for (auto orderIndex : orderByIndexs){
-    bool indexAlreadyIncluded = false;
-    for (auto index : indexs){
-      if (orderIndex == index){
-        indexAlreadyIncluded = true;
-        break;
-      }
-    }
-    if (!indexAlreadyIncluded){
-      additionalIndexs.push_back(orderIndex);
-    }
-  }
-
-
   for (int i = 1; i < tableData.rawRows.size(); i++){
     std::vector<std::string> row;
-    std::vector<std::string> orderByRow;
     auto columnContent = split(tableData.rawRows.at(i), ',');
     for (auto index : indexs){
       row.push_back(columnContent.at(index));
     }
-    for (auto index : orderByIndexs){
-      orderByRow.push_back(columnContent.at(index));
+    rows.push_back(row);
+  }
+
+  auto orderIndexs = getColumnIndexs(tableData.header, orderBy.cols);
+  std::sort (rows.begin(), rows.end(), [&orderIndexs](std::vector<std::string>& row1, std::vector<std::string>& row2) -> bool {
+    for (auto index : orderIndexs){
+      std::cout << index << " ";
+      auto value = strcmp(row1.at(index).c_str(), row2.at(index).c_str()); // this is wrong because row is already the new one 
+      if (value > 0){
+        std::cout << std::endl;
+        return false;
+      }else if (value < 0){
+        std::cout << std::endl;
+        return true;
+      }
     }
+    std::cout << std::endl;
+    return false;
+  });
+
+  std::vector<std::vector<std::string>> finalRows;
+  for (auto row : rows){
     if (filter.hasFilter){
-      auto columnValue = columnContent.at(filterIndex);
+      auto columnValue = row.at(filterIndex);
       if (!filter.invert && columnValue != filter.value){
         continue;
       }
@@ -121,45 +119,12 @@ std::vector<std::vector<std::string>> select(std::string tableName, std::vector<
     if (limit >= 0 && rows.size() >= limit){
       break;
     }
-    rows.push_back(row);
-    additionalOrderByRows.push_back(orderByRow);
+    finalRows.push_back(row);
   }
 
-  std::map<std::vector<std::string>*, std::vector<std::string>*> additionalMapping;
-  for (int i = 0; i < rows.size(); i++){
-    additionalMapping[&rows.at(i)] = &additionalOrderByRows.at(i);
-  }
-
-  if (orderBy.cols.size() > 0){
-    std::cout << "ordering: ";
-    for (auto col : orderBy.cols){
-      std::cout << col << " ";
-    }
-    std::cout << std::endl;
-    auto indexs = getColumnIndexs(tableData.header, orderBy.cols);
-
-
-    // This is wrong, because the row1/2 are reordered, not the original indexs 
-    // Additionally it doesn't even have the all the possible values that can be ordered by
-    std::sort (rows.begin(), rows.end(), [&indexs](std::vector<std::string>& row1, std::vector<std::string>& row2) -> bool {
-      std::cout << "sorting by: ";
-      for (auto index : indexs){
-        std::cout << index << " ";
-        auto value = strcmp(row1.at(index).c_str(), row2.at(index).c_str()); // this is wrong because row is already the new one 
-        if (value > 0){
-          std::cout << std::endl;
-          return false;
-        }else if (value < 0){
-          std::cout << std::endl;
-          return true;
-        }
-      }
-      std::cout << std::endl;
-      return true;
-    });
-  }
-  return rows;
+  return finalRows;
 }
+
 
 std::string findValue(std::string columnToFind, std::vector<std::string>& columns, std::vector<std::string>& values){
   for (int i = 0; i < columns.size(); i++){
