@@ -73,19 +73,10 @@ std::vector<std::vector<std::string>> select(std::string tableName, std::vector<
   auto tableData = readTableData(tableName);
   std::vector<std::vector<std::string>> rows;
 
-  auto filterIndex = -1;
-  if (filter.hasFilter){
-    filterIndex = getColumnIndexs(tableData.header, { filter.column }).at(0);
-  }
-
-  auto indexs = getColumnIndexs(tableData.header, columns);
   for (int i = 1; i < tableData.rawRows.size(); i++){
     std::vector<std::string> row;
     auto columnContent = split(tableData.rawRows.at(i), ',');
-    for (auto index : indexs){
-      row.push_back(columnContent.at(index));
-    }
-    rows.push_back(row);
+    rows.push_back(columnContent);
   }
 
   auto orderIndexs = getColumnIndexs(tableData.header, orderBy.cols);
@@ -102,6 +93,12 @@ std::vector<std::vector<std::string>> select(std::string tableName, std::vector<
   });
 
   std::vector<std::vector<std::string>> finalRows;
+  auto filterIndex = -1;
+  if (filter.hasFilter){
+    filterIndex = getColumnIndexs(tableData.header, { filter.column }).at(0);
+  }
+
+  auto indexs = getColumnIndexs(tableData.header, columns);
   for (auto row : rows){
     if (filter.hasFilter){
       auto columnValue = row.at(filterIndex);
@@ -138,7 +135,12 @@ std::vector<std::vector<std::string>> select(std::string tableName, std::vector<
     if (limit >= 0 && rows.size() >= limit){
       break;
     }
-    finalRows.push_back(row);
+
+    std::vector<std::string> organizedRow;
+    for (auto index : indexs){
+      organizedRow.push_back(row.at(index));
+    }
+    finalRows.push_back(organizedRow);
   }
 
   return finalRows;
