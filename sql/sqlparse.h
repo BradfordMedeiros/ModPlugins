@@ -66,6 +66,7 @@ struct SqlInsert {
 struct SqlCreate {
   std::vector<std::string> columns;
 };
+struct SqlDropTable {};
 struct SqlUpdate {
   std::vector<std::string> columns;
   std::vector<std::string> values;
@@ -81,7 +82,7 @@ struct SqlQuery {
   bool validQuery;
   SQL_QUERY_TYPE type;
   std::string table;
-  std::variant<SqlSelect, SqlInsert, SqlCreate, SqlUpdate, SqlDelete, SqlShowTables, SqlDescribe> queryData;
+  std::variant<SqlSelect, SqlInsert, SqlCreate, SqlDropTable, SqlUpdate, SqlDelete, SqlShowTables, SqlDescribe> queryData;
 };
 
 SqlQuery createParser(std::vector<LexTokens> lexTokens);

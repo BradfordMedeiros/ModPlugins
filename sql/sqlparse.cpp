@@ -327,7 +327,7 @@ std::map<std::string, std::function<void(SqlQuery&, LexTokens* token)>> machineF
   }},
   {"DROP", [](SqlQuery& query, LexTokens* token) -> void {
       query.type = SQL_DELETE_TABLE;
-      query.queryData = SqlDelete{};
+      query.queryData = SqlDropTable{};
   }},
   {"SHOW", [](SqlQuery& query, LexTokens* token) -> void {
       query.type = SQL_SHOW_TABLES;
