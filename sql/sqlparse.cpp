@@ -271,6 +271,7 @@ auto machineTransitions = ""
 "IDENTIFIER_TOKEN:groupbyselect *END*\n"
 "IDENTIFIER_TOKEN:groupbyselect SPLICE groupbyselect\n"
 "SPLICE:groupbyselect IDENTIFIER_TOKEN groupbyselect\n"
+"IDENTIFIER_TOKEN:groupbyselect LIMIT tableselect\n"
 
 "IDENTIFIER_TOKEN:whereselect2 *END*\n"
 "IDENTIFIER_TOKEN:whereselect2 LIMIT tableselect\n"
