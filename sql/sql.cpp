@@ -88,7 +88,13 @@ std::vector<int> getColumnsStarSelection(std::vector<std::string> header, std::v
 }
 
 
-std::vector<std::vector<std::string>> select(std::string tableName, std::vector<std::string> columns, SqlFilter filter, SqlOrderBy orderBy, int limit){
+std::vector<std::vector<std::string>> select(std::string tableName, std::vector<std::string> columns, SqlFilter filter, SqlOrderBy orderBy, std::vector<std::string> groupBy, int limit){
+  std::cout << "group by: ";
+  for (auto col : groupBy){
+    std::cout << col << " ";
+  }
+  std::cout << std::endl;
+
   auto tableData = readTableData(tableName);
   std::vector<std::vector<std::string>> rows;
 
@@ -201,7 +207,7 @@ void insert(std::string tableName, std::vector<std::string> columns, std::vector
 
 void update(std::string tableName, std::vector<std::string>& columns, std::vector<std::string>& values){
   auto tableData = readTableData(tableName);
-  auto allRows = select(tableName, tableData.header, SqlFilter{ .hasFilter = false }, SqlOrderBy{}, -1);
+  auto allRows = select(tableName, tableData.header, SqlFilter{ .hasFilter = false }, SqlOrderBy{}, {}, -1);
 
   std::string content = createHeader(tableData.header);
   for (auto row : allRows){
@@ -244,7 +250,7 @@ void deleteRows(std::string tableName, SqlFilter& filter){
   auto copyFilter = filter;
   copyFilter.type = oppositeFilter(filter.type);
 
-  auto rowsToKeep = select(tableName, tableData.header, copyFilter, SqlOrderBy{}, -1);
+  auto rowsToKeep = select(tableName, tableData.header, copyFilter, SqlOrderBy{}, {}, -1);
 
   std::string content = createHeader(tableData.header);
   for (auto row : rowsToKeep){
@@ -258,7 +264,7 @@ std::vector<std::vector<std::string>> executeSqlQuery(SqlQuery& query){
   if (query.type == SQL_SELECT){
     auto selectData = std::get_if<SqlSelect>(&query.queryData);
     assert(selectData != NULL);
-    return select(query.table, selectData -> columns, selectData -> filter, selectData -> orderBy, selectData -> limit);
+    return select(query.table, selectData -> columns, selectData -> filter, selectData -> orderBy, selectData -> groupby, selectData -> limit);
   }else if (query.type == SQL_INSERT){
     auto insertData = std::get_if<SqlInsert>(&query.queryData);
     assert(insertData != NULL);

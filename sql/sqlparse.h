@@ -56,6 +56,7 @@ struct SqlSelect {
   int limit;
   SqlFilter filter;
   SqlOrderBy orderBy;
+  std::vector<std::string> groupby;
 };
 struct SqlInsert {
   std::vector<std::string> columns;

@@ -259,11 +259,19 @@ auto machineTransitions = ""
 
 "SPLICE:orderbycomma IDENTIFIER_TOKEN orderby\n"
 "IDENTIFIER_TOKEN:tableselect *END*\n"
+"IDENTIFIER_TOKEN:tableselect GROUP whereselect2\n"
 "WHERE:tableselect IDENTIFIER_TOKEN whereselect\n"
 "IDENTIFIER_TOKEN:whereselect EQUAL whereselect\n"
 "IDENTIFIER_TOKEN:whereselect OPERATOR whereselect\n"
 "EQUAL:whereselect IDENTIFIER_TOKEN whereselect2\n"
 "OPERATOR:whereselect IDENTIFIER_TOKEN whereselect2\n"
+"IDENTIFIER_TOKEN:whereselect2 GROUP whereselect2\n"
+"GROUP:whereselect2 BY whereselect2\n"
+"BY:whereselect2 IDENTIFIER_TOKEN groupbyselect\n"
+"IDENTIFIER_TOKEN:groupbyselect *END*\n"
+"IDENTIFIER_TOKEN:groupbyselect SPLICE groupbyselect\n"
+"SPLICE:groupbyselect IDENTIFIER_TOKEN groupbyselect\n"
+
 "IDENTIFIER_TOKEN:whereselect2 *END*\n"
 "IDENTIFIER_TOKEN:whereselect2 LIMIT tableselect\n"
 "LIMIT:tableselect IDENTIFIER_TOKEN limit_tableselect\n"
@@ -382,6 +390,13 @@ std::map<std::string, std::function<void(SqlQuery&, LexTokens* token)>> machineF
       assert(selectQuery != NULL);
       selectQuery -> filter.hasFilter = true;
       selectQuery -> filter.value = identifierToken -> content;
+  }},
+  {"IDENTIFIER_TOKEN:groupbyselect", [](SqlQuery& query, LexTokens* token) -> void {
+    auto identifierToken = std::get_if<IdentifierToken>(token);
+    assert(identifierToken != NULL);
+    SqlSelect* selectQuery = std::get_if<SqlSelect>(&query.queryData);
+    assert(selectQuery != NULL);
+    selectQuery -> groupby.push_back(identifierToken -> content);
   }},
   {"IDENTIFIER_TOKEN:orderby", [](SqlQuery& query, LexTokens* token) -> void {
     auto identifierToken = std::get_if<IdentifierToken>(token);
