@@ -69,6 +69,25 @@ std::vector<int> getColumnIndexs(std::vector<std::string> header, std::vector<st
   return indexs;
 }
 
+std::vector<int> getColumnsStarSelection(std::vector<std::string> header, std::vector<std::string> columns){
+  std::vector<std::string> modifiedCols;
+  for (auto column : columns){
+    if (column == "*"){
+      for (auto theColumn : header){
+        bool columnAlreadyAdded = std::count(modifiedCols.begin(), modifiedCols.end(), theColumn) > 0;
+        if (!columnAlreadyAdded){
+          modifiedCols.push_back(theColumn);
+        }
+      }
+      break;
+    }else{
+      modifiedCols.push_back(column);
+    }
+  }
+  return getColumnIndexs(header, modifiedCols);
+}
+
+
 std::vector<std::vector<std::string>> select(std::string tableName, std::vector<std::string> columns, SqlFilter filter, SqlOrderBy orderBy, int limit){
   auto tableData = readTableData(tableName);
   std::vector<std::vector<std::string>> rows;
@@ -98,7 +117,7 @@ std::vector<std::vector<std::string>> select(std::string tableName, std::vector<
     filterIndex = getColumnIndexs(tableData.header, { filter.column }).at(0);
   }
 
-  auto indexs = getColumnIndexs(tableData.header, columns);
+  auto indexs = getColumnsStarSelection(tableData.header, columns);
   for (auto row : rows){
     if (filter.hasFilter){
       auto columnValue = row.at(filterIndex);
