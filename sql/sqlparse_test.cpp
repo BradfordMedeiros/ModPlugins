@@ -82,6 +82,13 @@ void lexTestInsert1(){
   );
 }
 
+void lexTestOperators(){
+  assertLex(
+    "some = operator > < ~",
+    "IDENTIFIER_TOKEN(some) EQUAL IDENTIFIER_TOKEN(operator) OPERATOR(>) OPERATOR(<) OPERATOR(~)"
+  );
+}
+
 void assertComplete(std::string expression, bool expected){
   bool complete = createParser(lex(expression)).validQuery;
   if (complete != expected){

@@ -212,6 +212,10 @@ int main(int argc, char *argv[]){
       .test = lexTestInsert1,
     },
     TestCase {
+      .name = "lexTestOperators",
+      .test = lexTestOperators,
+    },
+    TestCase {
       .name = "testParserComplete",
       .test = testParserComplete,
     },

@@ -91,17 +91,13 @@ std::vector<std::vector<std::string>> select(std::string tableName, std::vector<
   auto orderIndexs = getColumnIndexs(tableData.header, orderBy.cols);
   std::sort (rows.begin(), rows.end(), [&orderIndexs](std::vector<std::string>& row1, std::vector<std::string>& row2) -> bool {
     for (auto index : orderIndexs){
-      std::cout << index << " ";
       auto value = strcmp(row1.at(index).c_str(), row2.at(index).c_str()); // this is wrong because row is already the new one 
       if (value > 0){
-        std::cout << std::endl;
         return false;
       }else if (value < 0){
-        std::cout << std::endl;
         return true;
       }
     }
-    std::cout << std::endl;
     return false;
   });
 
@@ -109,12 +105,35 @@ std::vector<std::vector<std::string>> select(std::string tableName, std::vector<
   for (auto row : rows){
     if (filter.hasFilter){
       auto columnValue = row.at(filterIndex);
-      if (!filter.invert && columnValue != filter.value){
-        continue;
+      if (filter.type == EQUAL){
+        if (columnValue != filter.value){
+          continue;
+        }
+      }else if (filter.type == NOT_EQUAL){
+        if (columnValue == filter.value){
+          continue;
+        }
+      }else if (filter.type == GREATER_THAN){
+        if (columnValue <= filter.value){
+          continue;
+        }
+      }else if (filter.type == GREATER_THAN_OR_EQUAL){
+        if (columnValue < filter.value){
+          continue;
+        }
+      }else if (filter.type == LESS_THAN){
+        if (columnValue >= filter.value){
+          continue;
+        }
+      }else if (filter.type == LESS_THAN_OR_EQUAL){
+        if (columnValue > filter.value){
+          continue;
+        }
+      }else{
+        std::cout << "operator not supported" << std::endl;
+        assert(false);
       }
-      if (filter.invert && columnValue == filter.value){
-        continue;
-      }
+ 
     }
     if (limit >= 0 && rows.size() >= limit){
       break;
@@ -171,12 +190,35 @@ void update(std::string tableName, std::vector<std::string>& columns, std::vecto
   saveFile(tablePath(tableName), content);
 }
 
+OperatorType oppositeFilter(OperatorType filterType){
+  if (filterType == EQUAL){
+    return NOT_EQUAL;
+  }
+  if (filterType == NOT_EQUAL){
+    return EQUAL;
+  }
+  if (filterType == GREATER_THAN){
+    return LESS_THAN_OR_EQUAL;
+  }
+  if (filterType == LESS_THAN){
+    return GREATER_THAN_OR_EQUAL;
+  }
+  if (filterType == GREATER_THAN_OR_EQUAL){
+    return LESS_THAN;
+  }
+  if (filterType == LESS_THAN_OR_EQUAL){
+    return GREATER_THAN;
+  }
+  assert(false);
+  return EQUAL;
+}
+
 void deleteRows(std::string tableName, SqlFilter& filter){
   assert(filter.hasFilter);
 
   auto tableData = readTableData(tableName);
   auto copyFilter = filter;
-  copyFilter.invert = !filter.invert;
+  copyFilter.type = oppositeFilter(filter.type);
 
   auto rowsToKeep = select(tableName, tableData.header, copyFilter, SqlOrderBy{}, -1);
 

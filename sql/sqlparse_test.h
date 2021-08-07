@@ -20,6 +20,7 @@ void lexTestSelect4();
 void lexTestSelectSplice();
 void lexTestSelectSpliceWeirdSpacing();
 void lexTestInsert1();
+void lexTestOperators();
 
 void testParserComplete();
 void testParserIncomplete();

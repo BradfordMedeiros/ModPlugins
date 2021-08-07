@@ -10,6 +10,29 @@ std::string tokenTypeStr(LexTokens token, bool includeContent){
   if (symbolToken != NULL){
     return symbolToken -> name; 
   }
+  auto operatorToken = std::get_if<OperatorToken>(&token);
+  if (operatorToken != NULL){
+    std::string result = "OPERATOR";
+    if (includeContent){
+      std::string op = "";
+      if (operatorToken -> type == GREATER_THAN){
+        op = ">";
+      }else if (operatorToken -> type == LESS_THAN){
+        op = "<";
+      }else if (operatorToken -> type == EQUAL){
+        op = "=";
+      }else if (operatorToken -> type == NOT_EQUAL){
+        op = "!=";
+      }else if (operatorToken -> type == GREATER_THAN_OR_EQUAL){
+        op = ">=";
+      }else if (operatorToken -> type == LESS_THAN_OR_EQUAL){
+        op = "<=";
+      }
+      result = result + "(" + op + ")";
+    }
+    return result; 
+  }
+
   auto identifierToken = std::get_if<IdentifierToken>(&token);
   if (identifierToken != NULL){
     std::string result =  "IDENTIFIER_TOKEN";
@@ -19,6 +42,10 @@ std::string tokenTypeStr(LexTokens token, bool includeContent){
     return result;
   }
 
+  auto invalidToken = std::get_if<InvalidToken>(&token);
+  if (invalidToken != NULL){
+    return "INVALID_TOKEN";
+  }
   assert(false);
   return "";
 }
@@ -95,13 +122,15 @@ std::vector<const char*> validSymbols = {
 std::vector<LexTokens> lex(std::string value){
   std::vector<LexTokens> lexTokens;
   std::vector<TokenResult> filteredTokens;
-  for (auto token : tokenize(value, {' ', ',', '(', ')', '=', '"', '\n', '\r' })){
+  for (auto token : tokenize(value, {' ', ',', '(', ')', '=', '"', '<', '>', '!', '\n', '\r' })){
     if (token.isDelimiter && token.delimiter == ' '){
       continue;
     }
     filteredTokens.push_back(token);
   }
-  for (auto token : filteredTokens){
+
+  for (int i = 0; i < filteredTokens.size(); i++){
+    auto token = filteredTokens.at(i);
     if (token.isDelimiter){
       if (token.delimiter == ','){
         lexTokens.push_back(SymbolToken { .name = "SPLICE" });
@@ -110,7 +139,34 @@ std::vector<LexTokens> lex(std::string value){
       }else if (token.delimiter == ')'){
         lexTokens.push_back(SymbolToken { .name = "RIGHTP" });
       }else if (token.delimiter == '='){
-        lexTokens.push_back(SymbolToken { .name = "EQUAL" });
+        lexTokens.push_back(SymbolToken { . name = "EQUAL" });
+      }else if (token.delimiter == '!'){
+        auto hasNextToken = (i + 1) < filteredTokens.size();
+        auto nextTokenEqual = hasNextToken && (filteredTokens.at(i + 1).isDelimiter && filteredTokens.at(i + 1).delimiter == '=');
+        if (nextTokenEqual){
+          lexTokens.push_back(OperatorToken { .type = NOT_EQUAL });
+          i = i + 1;
+        }else{
+          lexTokens.push_back(InvalidToken{});
+        }
+      }else if (token.delimiter == '>'){
+        auto hasNextToken = (i + 1) < filteredTokens.size();
+        auto nextTokenEqual = hasNextToken && (filteredTokens.at(i + 1).isDelimiter && filteredTokens.at(i + 1).delimiter == '=');
+        if (nextTokenEqual){
+          lexTokens.push_back(OperatorToken { .type = GREATER_THAN_OR_EQUAL });
+          i = i + 1; // skip the next token
+        }else{
+          lexTokens.push_back(OperatorToken { .type = GREATER_THAN });
+        }
+      }else if (token.delimiter == '<'){
+        auto hasNextToken = (i + 1) < filteredTokens.size();
+        auto nextTokenEqual = hasNextToken && (filteredTokens.at(i + 1).isDelimiter && filteredTokens.at(i + 1).delimiter == '=');
+        if (nextTokenEqual){
+          lexTokens.push_back(OperatorToken { .type = LESS_THAN_OR_EQUAL });
+          i = i + 1; // skip the next token
+        }else{
+          lexTokens.push_back(OperatorToken { .type = LESS_THAN });
+        }
       }else if (token.delimiter == '\"'){
         lexTokens.push_back(SymbolToken { .name = "QUOTE" });
       }else if (token.delimiter == '\n' || token.delimiter == '\r'){
@@ -194,7 +250,9 @@ auto machineTransitions = ""
 "IDENTIFIER_TOKEN:tableselect *END*\n"
 "WHERE:tableselect IDENTIFIER_TOKEN whereselect\n"
 "IDENTIFIER_TOKEN:whereselect EQUAL whereselect\n"
+"IDENTIFIER_TOKEN:whereselect OPERATOR whereselect\n"
 "EQUAL:whereselect IDENTIFIER_TOKEN whereselect2\n"
+"OPERATOR:whereselect IDENTIFIER_TOKEN whereselect2\n"
 "IDENTIFIER_TOKEN:whereselect2 *END*\n"
 "IDENTIFIER_TOKEN:whereselect2 LIMIT tableselect\n"
 "LIMIT:tableselect IDENTIFIER_TOKEN limit_tableselect\n"
@@ -285,12 +343,25 @@ std::map<std::string, std::function<void(SqlQuery&, LexTokens* token)>> machineF
       assert(selectQuery != NULL);
       selectQuery -> limit = std::atoi(identifierToken -> content.c_str()); // strong typing should occur earlier
   }},
+  {"EQUAL:whereselect", [](SqlQuery& query, LexTokens* token) -> void {
+      SqlSelect* selectQuery = std::get_if<SqlSelect>(&query.queryData);
+      assert(selectQuery != NULL);
+      selectQuery -> filter.hasFilter = true;
+      selectQuery -> filter.type = EQUAL;
+  }},
+  {"OPERATOR:whereselect", [](SqlQuery& query, LexTokens* token) -> void {
+      auto operatorToken = std::get_if<OperatorToken>(token);
+      assert(operatorToken != NULL);
+      SqlSelect* selectQuery = std::get_if<SqlSelect>(&query.queryData);
+      assert(selectQuery != NULL);
+      selectQuery -> filter.hasFilter = true;
+      selectQuery -> filter.type = operatorToken -> type;
+  }},
   {"IDENTIFIER_TOKEN:whereselect", [](SqlQuery& query, LexTokens* token) -> void {
       auto identifierToken = std::get_if<IdentifierToken>(token);
       assert(identifierToken != NULL);
       SqlSelect* selectQuery = std::get_if<SqlSelect>(&query.queryData);
       assert(selectQuery != NULL);
-      selectQuery -> filter.hasFilter = true;
       selectQuery -> filter.column = identifierToken -> content;
   }},
   {"IDENTIFIER_TOKEN:whereselect2", [](SqlQuery& query, LexTokens* token) -> void {

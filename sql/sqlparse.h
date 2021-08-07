@@ -16,7 +16,14 @@ struct SymbolToken{
 struct IdentifierToken{
   std::string content;
 };
-typedef std::variant<SymbolToken, IdentifierToken> LexTokens;
+struct InvalidToken{};
+
+enum OperatorType { GREATER_THAN, LESS_THAN, GREATER_THAN_OR_EQUAL, LESS_THAN_OR_EQUAL, EQUAL, NOT_EQUAL };
+struct OperatorToken {
+  OperatorType type;
+};
+
+typedef std::variant<SymbolToken, IdentifierToken, OperatorToken, InvalidToken> LexTokens;
 
 std::string tokenTypeStr(std::vector<LexTokens> tokens, bool includeContent);
 std::vector<LexTokens> lex(std::string value);
@@ -37,7 +44,7 @@ struct SqlFilter {
   bool hasFilter;
   std::string column;
   std::string value;
-  bool invert;
+  OperatorType type;
 };
 struct SqlOrderBy {
   std::vector<std::string> cols;
