@@ -116,7 +116,7 @@ std::vector<TokenResult> tokenize(std::string str, std::vector<char> delimiters)
 std::vector<const char*> validSymbols = {
   "SELECT", "FROM", "CREATE", "DROP", "TABLE", "SHOW", "TABLES", "VALUES", 
   "INSERT", "INTO", "DESCRIBE", "GROUP", "BY", "LIMIT", "WHERE", "UPDATE", "SET",
-  "ORDER",
+  "ORDER", "ASC", "DESC",
 }; 
 
 std::vector<LexTokens> lex(std::string value){
@@ -244,8 +244,19 @@ auto machineTransitions = ""
 "ORDER BY tableorderby\n"
 "BY:tableorderby IDENTIFIER_TOKEN orderby\n"
 "IDENTIFIER_TOKEN:orderby *END*\n"
+
 "IDENTIFIER_TOKEN:orderby LIMIT tableselect\n"
 "IDENTIFIER_TOKEN:orderby SPLICE orderbycomma\n"
+"IDENTIFIER_TOKEN:orderby ASC orderby\n"
+"IDENTIFIER_TOKEN:orderby DESC orderby\n"
+
+"ASC:orderby SPLICE orderbycomma\n"
+"ASC:orderby LIMIT tableselect\n"
+"ASC:orderby *END*\n"
+"DESC:orderby SPLICE orderbycomma\n"
+"DESC:orderby LIMIT tableselect\n"
+"DESC:orderby *END*\n"
+
 "SPLICE:orderbycomma IDENTIFIER_TOKEN orderby\n"
 "IDENTIFIER_TOKEN:tableselect *END*\n"
 "WHERE:tableselect IDENTIFIER_TOKEN whereselect\n"
@@ -379,6 +390,12 @@ std::map<std::string, std::function<void(SqlQuery&, LexTokens* token)>> machineF
     assert(selectQuery != NULL);
     selectQuery -> orderBy.cols.push_back(identifierToken -> content);
     selectQuery -> orderBy.isDesc.push_back(false);
+  }},
+  {"DESC:orderby", [](SqlQuery& query, LexTokens* token) -> void {
+    SqlSelect* selectQuery = std::get_if<SqlSelect>(&query.queryData);
+    assert(selectQuery != NULL);
+    auto lastIndex = selectQuery -> orderBy.isDesc.size() - 1;
+    selectQuery -> orderBy.isDesc.at(lastIndex) = true;
   }},
   {"DESCRIBE", [](SqlQuery& query, LexTokens* token) -> void {
       query.type = SQL_DESCRIBE;
