@@ -508,6 +508,12 @@ std::map<std::string, std::function<void(SqlQuery&, LexTokens* token)>> machineF
     query.type = SQL_DELETE;
     query.queryData = SqlDelete{};
   }},
+  {"EQUAL:delete_where_val", [](SqlQuery& query, LexTokens* token) -> void {
+      SqlDelete* deleteQuery = std::get_if<SqlDelete>(&query.queryData);
+      assert(deleteQuery != NULL);
+      deleteQuery -> filter.hasFilter = true;
+      deleteQuery -> filter.type = EQUAL;
+  }},
   {"OPERATOR:delete_where_val", [](SqlQuery& query, LexTokens* token) -> void {
       auto operatorToken = std::get_if<OperatorToken>(token);
       assert(operatorToken != NULL);

@@ -217,41 +217,23 @@ void update(std::string tableName, std::vector<std::string>& columns, std::vecto
   saveFile(tablePath(tableName), content);
 }
 
-OperatorType oppositeFilter(OperatorType filterType){
-  if (filterType == EQUAL){
-    return NOT_EQUAL;
-  }
-  if (filterType == NOT_EQUAL){
-    return EQUAL;
-  }
-  if (filterType == GREATER_THAN){
-    return LESS_THAN_OR_EQUAL;
-  }
-  if (filterType == LESS_THAN){
-    return GREATER_THAN_OR_EQUAL;
-  }
-  if (filterType == GREATER_THAN_OR_EQUAL){
-    return LESS_THAN;
-  }
-  if (filterType == LESS_THAN_OR_EQUAL){
-    return GREATER_THAN;
-  }
-  assert(false);
-  return EQUAL;
-}
-
 void deleteRows(std::string tableName, SqlFilter& filter){
   std::cout << "sql -> delete rows!" << std::endl;
   assert(filter.hasFilter);
 
   auto tableData = readTableData(tableName);
-  auto copyFilter = filter;
-  copyFilter.type = oppositeFilter(filter.type);
-
-  auto rowsToKeep = select(tableName, tableData.header, copyFilter, SqlOrderBy{}, {}, -1);
+  auto rowsToKeep = select(tableName, tableData.header, SqlFilter{}, SqlOrderBy{}, {}, -1);
 
   std::string content = createHeader(tableData.header);
   for (auto row : rowsToKeep){
+    if (filter.hasFilter){
+      auto filterIndex = getColumnIndexs(tableData.header, { filter.column }).at(0);
+      auto column = row.at(filterIndex);
+      auto passFilter = passesFilter(column, filter);
+      if (passFilter){
+        continue;
+      }
+    }
     content = content + createRow(row);
   }
   saveFile(tablePath(tableName), content);
