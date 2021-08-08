@@ -106,6 +106,9 @@ int main(int argc, char *argv[]){
         }
       }
       return 0;
+    }else if (strcmp(argv[1], "dotviz") == 0){
+      std::cout << drawDotGraph() << std::endl;
+      return 0;
     }
   }
 

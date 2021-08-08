@@ -586,3 +586,12 @@ SqlQuery createParser(std::vector<LexTokens> lexTokens){
 SqlQuery compileSqlQuery(std::string queryString){
   return createParser(lex(queryString));
 }
+
+std::string drawDotGraph(){
+  std::string content = "\n strict graph { \n \"from-one\" -- \"to-another\" \n}\n ";
+  
+  for (auto &[machineName, tokenState] : machine){
+
+  }
+  return content;
+}

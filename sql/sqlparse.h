@@ -89,4 +89,6 @@ SqlQuery createParser(std::vector<LexTokens> lexTokens);
 
 SqlQuery compileSqlQuery(std::string queryString);
 
+std::string drawDotGraph();
+
 #endif
