@@ -84,8 +84,8 @@ void lexTestInsert1(){
 
 void lexTestOperators(){
   assertLex(
-    "some = operator > < ~",
-    "IDENTIFIER_TOKEN(some) EQUAL IDENTIFIER_TOKEN(operator) OPERATOR(>) OPERATOR(<) OPERATOR(~)"
+    "some = operator > < !=",
+    "IDENTIFIER_TOKEN(some) EQUAL IDENTIFIER_TOKEN(operator) OPERATOR(>) OPERATOR(<) OPERATOR(!=)"
   );
 }
 
