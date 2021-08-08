@@ -252,7 +252,7 @@ auto machineTransitions = ""
 "SPLICE IDENTIFIER_TOKEN select\n"
 "FROM IDENTIFIER_TOKEN tableselect\n"
 "IDENTIFIER_TOKEN:tableselect LIMIT tableselect\n"
-"IDENTIFIER_TOKEN:tableselect WHERE tableselect\n"
+"IDENTIFIER_TOKEN:tableselect WHERE whereselect\n"
 "IDENTIFIER_TOKEN:tableselect ORDER\n"
 "ORDER BY tableorderby\n"
 "BY:tableorderby IDENTIFIER_TOKEN orderby\n"
@@ -507,8 +507,30 @@ std::map<std::string, std::function<void(SqlQuery&, LexTokens* token)>> machineF
     query.table = identifierToken -> content;
     query.type = SQL_DELETE;
     query.queryData = SqlDelete{};
-  }}
-
+  }},
+  {"OPERATOR:delete_where_val", [](SqlQuery& query, LexTokens* token) -> void {
+      auto operatorToken = std::get_if<OperatorToken>(token);
+      assert(operatorToken != NULL);
+      SqlDelete* deleteQuery = std::get_if<SqlDelete>(&query.queryData);
+      assert(deleteQuery != NULL);
+      deleteQuery -> filter.hasFilter = true;
+      deleteQuery -> filter.type = operatorToken -> type;
+  }},
+  {"IDENTIFIER_TOKEN:delete_where_val", [](SqlQuery& query, LexTokens* token) -> void {
+      auto identifierToken = std::get_if<IdentifierToken>(token);
+      assert(identifierToken != NULL);
+      SqlDelete* deleteQuery = std::get_if<SqlDelete>(&query.queryData);
+      assert(deleteQuery != NULL);
+      deleteQuery -> filter.column = identifierToken -> content;
+  }},
+  {"IDENTIFIER_TOKEN:delete_where_val2", [](SqlQuery& query, LexTokens* token) -> void {
+      auto identifierToken = std::get_if<IdentifierToken>(token);
+      assert(identifierToken != NULL);
+      SqlDelete* deleteQuery = std::get_if<SqlDelete>(&query.queryData);
+      assert(deleteQuery != NULL);
+      deleteQuery -> filter.hasFilter = true;
+      deleteQuery -> filter.value = identifierToken -> content;
+  }},
 };
 
 std::map<std::string, TokenState> createMachine(std::string transitionsStr, std::map<std::string, std::function<void(SqlQuery&, LexTokens* token)>>& fns){

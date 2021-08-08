@@ -87,6 +87,29 @@ std::vector<int> getColumnsStarSelection(std::vector<std::string> header, std::v
   return getColumnIndexs(header, modifiedCols);
 }
 
+bool passesFilter(std::string& columnValue, SqlFilter& filter){
+  if (filter.type == EQUAL){
+    return columnValue == filter.value;
+  }
+  if (filter.type == NOT_EQUAL){
+    return columnValue != filter.value;
+  }
+  if (filter.type == GREATER_THAN){
+    return columnValue > filter.value;
+  }
+  if (filter.type == GREATER_THAN_OR_EQUAL){
+    return columnValue >= filter.value;
+  }
+  if (filter.type == LESS_THAN){
+    return columnValue < filter.value;
+  }
+  if (filter.type == LESS_THAN_OR_EQUAL){
+    return columnValue <= filter.value;
+  }
+  std::cout << "operator not supported" << std::endl;
+  assert(false);
+  return false;
+}
 
 std::vector<std::vector<std::string>> select(std::string tableName, std::vector<std::string> columns, SqlFilter filter, SqlOrderBy orderBy, std::vector<std::string> groupBy, int limit){
   std::cout << "group by: ";
@@ -98,17 +121,8 @@ std::vector<std::vector<std::string>> select(std::string tableName, std::vector<
   auto tableData = readTableData(tableName);
   std::vector<std::vector<std::string>> rows;
 
-  std::map<std::string, std::set<std::string>> uniqueColVals;
-  for (auto col : tableData.header){
-    uniqueColVals[col] = {};
-  }
-
   for (int i = 1; i < tableData.rawRows.size(); i++){
-    std::vector<std::string> row;
     auto columnContent = split(tableData.rawRows.at(i), ',');
-    for (int i = 0; i < tableData.header.size(); i++){
-      uniqueColVals[tableData.header.at(i)].insert(columnContent.at(i));
-    }
     rows.push_back(columnContent);
   }
 
@@ -138,56 +152,19 @@ std::vector<std::vector<std::string>> select(std::string tableName, std::vector<
   for (auto row : rows){
     if (filter.hasFilter){
       auto columnValue = row.at(filterIndex);
-      if (filter.type == EQUAL){
-        if (columnValue != filter.value){
-          continue;
-        }
-      }else if (filter.type == NOT_EQUAL){
-        if (columnValue == filter.value){
-          continue;
-        }
-      }else if (filter.type == GREATER_THAN){
-        if (columnValue <= filter.value){
-          continue;
-        }
-      }else if (filter.type == GREATER_THAN_OR_EQUAL){
-        if (columnValue < filter.value){
-          continue;
-        }
-      }else if (filter.type == LESS_THAN){
-        if (columnValue >= filter.value){
-          continue;
-        }
-      }else if (filter.type == LESS_THAN_OR_EQUAL){
-        if (columnValue > filter.value){
-          continue;
-        }
-      }else{
-        std::cout << "operator not supported" << std::endl;
-        assert(false);
+      auto passFilter = passesFilter(columnValue, filter);
+      if (!passFilter){
+        continue;
       }
- 
     }
     if (limit >= 0 && rows.size() >= limit){
       break;
     }
 
     std::vector<std::string> organizedRow;
-    
-    if (groupBy.size() == 0){
-      for (auto index : indexs){
-        organizedRow.push_back(row.at(index));
-      }
-    }else{
-      // for each element in the group by (permuate each column unique values)
-      for (int i = 0; i < uniqueColVals.size(); i++){
-
-      }
-      // calc unique grouping keys, 
-      // could do (getPermutations() -> [a | b, x], ->  [a,x] [b,x], etc )
-      // then loop over this, and 
-    }
-
+    for (auto index : indexs){
+      organizedRow.push_back(row.at(index));
+    }   
     finalRows.push_back(organizedRow);
   }
 
