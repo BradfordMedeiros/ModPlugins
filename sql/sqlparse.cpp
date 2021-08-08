@@ -588,13 +588,13 @@ SqlQuery compileSqlQuery(std::string queryString){
 }
 
 std::string drawDotGraph(){
-  std::string prefix = "\n strict graph { \n";
+  std::string prefix = "\n strict digraph { \n";
   std::string content = "";
   std::string suffix = "\n}\n";
 
   for (auto &[machineName, tokenState] : machine){
     for (auto nextState : tokenState.nextStates){
-      auto rootContent = "\"" + machineName + "\" -- \"" + nextState.token;
+      auto rootContent = "\"" + machineName + "\" -> \"" + nextState.token;
       auto suffixContent = nextState.stateSuffix == "" ? "" : ( ":" + nextState.stateSuffix);
       content = content + rootContent + suffixContent + "\"\n" ;
     }
