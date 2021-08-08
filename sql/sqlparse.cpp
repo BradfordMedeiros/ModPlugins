@@ -273,7 +273,6 @@ auto machineTransitions = ""
 "SPLICE:orderbycomma IDENTIFIER_TOKEN orderby\n"
 "IDENTIFIER_TOKEN:tableselect *END*\n"
 "IDENTIFIER_TOKEN:tableselect GROUP whereselect2\n" + 
-
 generateWhere("whereselect") + 
 
 "IDENTIFIER_TOKEN:whereselect2 GROUP whereselect2\n"
@@ -316,11 +315,8 @@ generateWhere("whereselect") +
 "IDENTIFIER_TOKEN:tableupdate_val *END*\n"
 "IDENTIFIER_TOKEN:tableupdate_val SPLICE tableupdate_val\n"
 "SPLICE:tableupdate_val IDENTIFIER_TOKEN tableupdate_col\n"
-"IDENTIFIER_TOKEN:tableupdate_val WHERE tableupdate\n"
-"WHERE:tableupdate IDENTIFIER_TOKEN tableupdatef_col\n"
-"IDENTIFIER_TOKEN:tableupdatef_col EQUAL tableupdatef_col\n"
-"EQUAL:tableupdatef_col IDENTIFIER_TOKEN tableupdatef_val\n"
-"IDENTIFIER_TOKEN:tableupdatef_val *END*\n"
+"IDENTIFIER_TOKEN:tableupdate_val WHERE tableupdate\n" + 
+generateWhere("tableupdate_where") +
 
 "DELETE FROM delete_vals\n"
 "FROM:delete_vals IDENTIFIER_TOKEN delete_vals\n"
