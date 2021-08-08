@@ -116,7 +116,7 @@ std::vector<TokenResult> tokenize(std::string str, std::vector<char> delimiters)
 std::vector<const char*> validSymbols = {
   "SELECT", "FROM", "CREATE", "DROP", "TABLE", "SHOW", "TABLES", "VALUES", 
   "INSERT", "INTO", "DESCRIBE", "GROUP", "BY", "LIMIT", "WHERE", "UPDATE", "SET",
-  "ORDER", "ASC", "DESC",
+  "ORDER", "ASC", "DESC", "DELETE",
 }; 
 
 std::vector<LexTokens> lex(std::string value){
@@ -207,6 +207,18 @@ struct TokenState {
   std::function<void(SqlQuery&, LexTokens*)> fn;
 };
 
+std::string generateWhere(std::string suffix){
+  std::string content = "";
+  content = content + 
+    "WHERE:" + suffix + " IDENTIFIER_TOKEN " + suffix +"\n" + 
+    "IDENTIFIER_TOKEN:" + suffix + " EQUAL " + suffix + "\n" + 
+    "IDENTIFIER_TOKEN:" + suffix + " OPERATOR " + suffix + "\n" + 
+    "EQUAL:" + suffix + " IDENTIFIER_TOKEN " + suffix +"2\n" + 
+    "OPERATOR:" + suffix + " IDENTIFIER_TOKEN " + suffix + "2\n" +
+    "IDENTIFIER_TOKEN:" + suffix + "2 *END*\n";
+  return content;
+}
+
 auto machineTransitions = ""
 "start CREATE\n"
 "start DROP\n"
@@ -215,6 +227,7 @@ auto machineTransitions = ""
 "start DESCRIBE\n"
 "start INSERT\n"
 "start UPDATE\n"
+"start DELETE\n"
 
 "CREATE TABLE\n"
 "TABLE IDENTIFIER_TOKEN table\n"
@@ -259,12 +272,10 @@ auto machineTransitions = ""
 
 "SPLICE:orderbycomma IDENTIFIER_TOKEN orderby\n"
 "IDENTIFIER_TOKEN:tableselect *END*\n"
-"IDENTIFIER_TOKEN:tableselect GROUP whereselect2\n"
-"WHERE:tableselect IDENTIFIER_TOKEN whereselect\n"
-"IDENTIFIER_TOKEN:whereselect EQUAL whereselect\n"
-"IDENTIFIER_TOKEN:whereselect OPERATOR whereselect\n"
-"EQUAL:whereselect IDENTIFIER_TOKEN whereselect2\n"
-"OPERATOR:whereselect IDENTIFIER_TOKEN whereselect2\n"
+"IDENTIFIER_TOKEN:tableselect GROUP whereselect2\n" + 
+
+generateWhere("whereselect") + 
+
 "IDENTIFIER_TOKEN:whereselect2 GROUP whereselect2\n"
 "GROUP:whereselect2 BY whereselect2\n"
 "BY:whereselect2 IDENTIFIER_TOKEN groupbyselect\n"
@@ -272,8 +283,6 @@ auto machineTransitions = ""
 "IDENTIFIER_TOKEN:groupbyselect SPLICE groupbyselect\n"
 "SPLICE:groupbyselect IDENTIFIER_TOKEN groupbyselect\n"
 "IDENTIFIER_TOKEN:groupbyselect LIMIT tableselect\n"
-
-"IDENTIFIER_TOKEN:whereselect2 *END*\n"
 "IDENTIFIER_TOKEN:whereselect2 LIMIT tableselect\n"
 "LIMIT:tableselect IDENTIFIER_TOKEN limit_tableselect\n"
 "IDENTIFIER_TOKEN:limit_tableselect *END*\n"
@@ -312,6 +321,12 @@ auto machineTransitions = ""
 "IDENTIFIER_TOKEN:tableupdatef_col EQUAL tableupdatef_col\n"
 "EQUAL:tableupdatef_col IDENTIFIER_TOKEN tableupdatef_val\n"
 "IDENTIFIER_TOKEN:tableupdatef_val *END*\n"
+
+"DELETE FROM delete_vals\n"
+"FROM:delete_vals IDENTIFIER_TOKEN delete_vals\n"
+"IDENTIFIER_TOKEN:delete_vals WHERE delete_where_val\n" + 
+"IDENTIFIER_TOKEN:delete_vals *END*\n" + 
+generateWhere("delete_where_val") +
 "";
 
 void setTableName(SqlQuery& query, LexTokens* token){
@@ -490,6 +505,13 @@ std::map<std::string, std::function<void(SqlQuery&, LexTokens* token)>> machineF
     updateQuery -> filter.hasFilter = true;
     updateQuery -> filter.value = identifierToken -> content;
   }},
+  {"IDENTIFIER_TOKEN:delete_vals", [](SqlQuery& query, LexTokens* token) -> void {
+    auto identifierToken = std::get_if<IdentifierToken>(token);
+    assert(identifierToken != NULL);
+    query.table = identifierToken -> content;
+    query.type = SQL_DELETE;
+    query.queryData = SqlDelete{};
+  }}
 
 };
 

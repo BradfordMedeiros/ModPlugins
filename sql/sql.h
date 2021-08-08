@@ -2,6 +2,7 @@
 #define MODPLUGIN_SQL
 
 #include <string.h>
+#include <set>
 #include "./sqlparse.h"
 #include "./util.h"
 
