@@ -85,7 +85,7 @@ struct SqlQuery {
   std::variant<SqlSelect, SqlInsert, SqlCreate, SqlDropTable, SqlUpdate, SqlDelete, SqlShowTables, SqlDescribe> queryData;
 };
 
-SqlQuery createParser(std::vector<LexTokens> lexTokens);
+SqlQuery parseTokens(std::vector<LexTokens> lexTokens);
 
 SqlQuery compileSqlQuery(std::string queryString);
 

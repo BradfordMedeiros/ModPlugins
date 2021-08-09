@@ -251,6 +251,7 @@ auto machineTransitions = ""
 "IDENTIFIER_TOKEN:select FROM\n"
 "SPLICE IDENTIFIER_TOKEN select\n"
 "FROM IDENTIFIER_TOKEN tableselect\n"
+"FROM *SUBQUERY* tableselect\n"
 "IDENTIFIER_TOKEN:tableselect LIMIT tableselect\n"
 "IDENTIFIER_TOKEN:tableselect WHERE whereselect\n"
 "IDENTIFIER_TOKEN:tableselect ORDER\n"
@@ -563,7 +564,7 @@ std::map<std::string, TokenState> createMachine(std::string transitionsStr, std:
 std::map<std::string, TokenState> machine = createMachine(machineTransitions, machineFns);
 
 
-SqlQuery createParser(std::vector<LexTokens> lexTokens){
+SqlQuery parseTokens(std::vector<LexTokens> lexTokens){
   SqlQuery query {
     .validQuery = false,
     .type = SQL_SELECT,
@@ -580,6 +581,9 @@ SqlQuery createParser(std::vector<LexTokens> lexTokens){
     auto nextStates = machine.at(currState).nextStates;
     machine.at(currState).fn(query, lastToken);
     lastToken = &lexToken;
+
+    // maybe we detect if the next expression is a subquery, if so, we run that expression
+    // and then feed it into the machine, advance by x tokens
 
     auto tokenAsStr = tokenTypeStr(lexToken, false);
     bool nextStateValid = false;
@@ -612,7 +616,7 @@ SqlQuery createParser(std::vector<LexTokens> lexTokens){
 }
 
 SqlQuery compileSqlQuery(std::string queryString){
-  return createParser(lex(queryString));
+  return parseTokens(lex(queryString));
 }
 
 std::string drawDotGraph(){
