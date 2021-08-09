@@ -59,7 +59,7 @@ std::string tokenTypeStr(std::vector<LexTokens> tokens, bool includeContent){
 }
 
 bool isIdentifier(std::string token){
-  return true;
+  return (token.find(',') == std::string::npos) && (token.find('\n') == std::string::npos);
 }
 
 std::string tokenTypeStr(TokenResult token){

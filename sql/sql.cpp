@@ -111,6 +111,36 @@ bool passesFilter(std::string& columnValue, SqlFilter& filter){
   return false;
 }
 
+struct GroupingKey {
+  std::vector<std::string> values;
+};
+
+bool groupingKeysEqual(GroupingKey& key1, GroupingKey& key2){
+  assert(key1.values.size() == key2.values.size());
+  for (int i = 0; i < key1.values.size(); i++){
+    if (key1.values.at(i) != key2.values.at(i)){
+      return false;
+    }
+  }
+  return true;
+}
+GroupingKey createGroupingKey(std::vector<std::string>& row, std::vector<int>& indexs){
+  std::vector<std::string> values;
+  for (auto index : indexs){
+    values.push_back(row.at(index));
+  }
+  GroupingKey key { .values = values };
+  return key;
+}
+std::string hashGroupingKey(GroupingKey& key){
+  std::string hash = "";
+  for (auto value : key.values){
+    hash = hash + value + ",";
+  }
+  return hash;
+}
+
+
 std::vector<std::vector<std::string>> select(std::string tableName, std::vector<std::string> columns, SqlFilter filter, SqlOrderBy orderBy, std::vector<std::string> groupBy, int limit){
   std::cout << "group by: ";
   for (auto col : groupBy){
@@ -149,6 +179,9 @@ std::vector<std::vector<std::string>> select(std::string tableName, std::vector<
   }
 
   auto indexs = getColumnsStarSelection(tableData.header, columns);
+  auto groupingIndexs = getColumnIndexs(tableData.header, groupBy);
+  std::set<std::string> groupingKeysHash;
+
   for (auto row : rows){
     if (filter.hasFilter){
       auto columnValue = row.at(filterIndex);
@@ -162,10 +195,24 @@ std::vector<std::vector<std::string>> select(std::string tableName, std::vector<
     }
 
     std::vector<std::string> organizedRow;
-    for (auto index : indexs){
-      organizedRow.push_back(row.at(index));
-    }   
-    finalRows.push_back(organizedRow);
+
+    if (groupBy.size() > 0){
+      auto groupingKey = createGroupingKey(row, groupingIndexs);
+      auto groupKeyHash = hashGroupingKey(groupingKey);
+      auto alreadyHasKey = groupingKeysHash.find(groupKeyHash) != groupingKeysHash.end();
+      if (!alreadyHasKey){
+        groupingKeysHash.insert(groupKeyHash);
+        for (auto index : indexs){
+          organizedRow.push_back(row.at(index));
+        }
+        finalRows.push_back(organizedRow);
+      }
+    }else{
+      for (auto index : indexs){
+        organizedRow.push_back(row.at(index));
+      }   
+      finalRows.push_back(organizedRow);
+    }
   }
 
   return finalRows;
@@ -188,7 +235,6 @@ std::string createRow(std::vector<std::string> values){
 void insert(std::string tableName, std::vector<std::string> columns, std::vector<std::vector<std::string>> values){
   auto header = readTableData(tableName).header;
   auto indexs = getColumnIndexs(header, columns);
-
 
   std::string newContent = "";
   for (auto value : values){
@@ -218,12 +264,8 @@ void update(std::string tableName, std::vector<std::string>& columns, std::vecto
 }
 
 void deleteRows(std::string tableName, SqlFilter& filter){
-  std::cout << "sql -> delete rows!" << std::endl;
-  assert(filter.hasFilter);
-
   auto tableData = readTableData(tableName);
   auto rowsToKeep = select(tableName, tableData.header, SqlFilter{}, SqlOrderBy{}, {}, -1);
-
   std::string content = createHeader(tableData.header);
   for (auto row : rowsToKeep){
     if (filter.hasFilter){
