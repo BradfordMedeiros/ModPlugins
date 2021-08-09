@@ -116,7 +116,7 @@ std::vector<TokenResult> tokenize(std::string str, std::vector<char> delimiters)
 std::vector<const char*> validSymbols = {
   "SELECT", "FROM", "CREATE", "DROP", "TABLE", "SHOW", "TABLES", "VALUES", 
   "INSERT", "INTO", "DESCRIBE", "GROUP", "BY", "LIMIT", "WHERE", "UPDATE", "SET",
-  "ORDER", "ASC", "DESC", "DELETE",
+  "ORDER", "ASC", "DESC", "DELETE", "LEFT", "JOIN", "ON",
 }; 
 
 std::vector<LexTokens> lex(std::string value){
@@ -252,6 +252,14 @@ auto machineTransitions = ""
 "SPLICE IDENTIFIER_TOKEN select\n"
 "FROM IDENTIFIER_TOKEN tableselect\n"
 "FROM *SUBQUERY* tableselect\n"
+"IDENTIFIER_TOKEN:tableselect LEFT tableselect\n"
+"LEFT:tableselect JOIN tableselect\n"
+"JOIN:tableselect IDENTIFIER_TOKEN tablejoin\n"
+"IDENTIFIER_TOKEN:tablejoin ON tablejoin\n"
+"ON:tablejoin IDENTIFIER_TOKEN tablejoinc\n"
+"IDENTIFIER_TOKEN:tablejoinc EQUAL tablejoinc\n"
+"EQUAL:tablejoinc IDENTIFIER_TOKEN tablejoinv\n"
+"IDENTIFIER_TOKEN:tablejoinv *END*\n"
 "IDENTIFIER_TOKEN:tableselect LIMIT tableselect\n"
 "IDENTIFIER_TOKEN:tableselect WHERE whereselect\n"
 "IDENTIFIER_TOKEN:tableselect ORDER\n"
