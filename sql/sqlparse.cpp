@@ -433,6 +433,35 @@ std::map<std::string, std::function<void(SqlQuery&, LexTokens* token)>> machineF
     auto lastIndex = selectQuery -> orderBy.isDesc.size() - 1;
     selectQuery -> orderBy.isDesc.at(lastIndex) = true;
   }},
+  {"IDENTIFIER_TOKEN:tablejoin", [](SqlQuery& query, LexTokens* token) -> void {
+    auto identifierToken = std::get_if<IdentifierToken>(token);
+    assert(identifierToken != NULL);
+    SqlSelect* selectQuery = std::get_if<SqlSelect>(&query.queryData);
+    assert(selectQuery != NULL);
+    selectQuery -> join = SqlJoin {
+      .hasJoin = true,
+      .table = identifierToken -> content,
+    };
+  }},
+  {"IDENTIFIER_TOKEN:tablejoinc", [](SqlQuery& query, LexTokens* token) -> void {
+    auto identifierToken = std::get_if<IdentifierToken>(token);
+    assert(identifierToken != NULL);
+    SqlSelect* selectQuery = std::get_if<SqlSelect>(&query.queryData);
+    assert(selectQuery != NULL);
+    selectQuery -> join.col1 = identifierToken -> content;
+  }},
+  {"EQUAL:tablejoinc", [](SqlQuery& query, LexTokens* token) -> void {
+    SqlSelect* selectQuery = std::get_if<SqlSelect>(&query.queryData);
+    assert(selectQuery != NULL);
+    selectQuery -> join.type = EQUAL;
+  }},
+  {"IDENTIFIER_TOKEN:tablejoinv", [](SqlQuery& query, LexTokens* token) -> void {
+    auto identifierToken = std::get_if<IdentifierToken>(token);
+    assert(identifierToken != NULL);
+    SqlSelect* selectQuery = std::get_if<SqlSelect>(&query.queryData);
+    assert(selectQuery != NULL);
+    selectQuery -> join.col2 = identifierToken -> content;
+  }},
   {"DESCRIBE", [](SqlQuery& query, LexTokens* token) -> void {
       query.type = SQL_DESCRIBE;
       query.queryData = SqlDescribe{};

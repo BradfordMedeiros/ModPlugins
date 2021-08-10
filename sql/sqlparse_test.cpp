@@ -144,6 +144,22 @@ void testCompileSqlSelect(){
   assert(queryData -> columns.at(1) == "age");
 }
 
+void testCompileSqlSelectJoin(){
+  auto sqlQuery1 = compileSqlQuery("select name, anothertable.age from testtable left join anothertable on testtable.name = anothertable.name");
+  assert(sqlQuery1.validQuery);
+  assert(sqlQuery1.type == SQL_SELECT);
+  assert(sqlQuery1.table == "testtable");
+  auto queryData = std::get_if<SqlSelect>(&(sqlQuery1.queryData));
+  assert(queryData != NULL);
+  assert(queryData -> columns.at(0) == "name");
+  assert(queryData -> columns.at(1) == "anothertable.age");
+  assert(queryData -> join.hasJoin);
+  assert(queryData -> join.table == "anothertable");
+  assert(queryData -> join.col1 == "testtable.name");
+  assert(queryData -> join.col2 == "anothertable.name");
+  assert(queryData -> join.type == EQUAL);
+}
+
 void testCompileSqlUpdate(){
   auto sqlQuery1 = compileSqlQuery("update atable set name = nonamehere");
   assert(sqlQuery1.validQuery);
@@ -154,4 +170,3 @@ void testCompileSqlUpdate(){
   assert(queryData -> columns.at(0) == "name");
   assert(queryData -> values.at(0) == "nonamehere");
 }
-

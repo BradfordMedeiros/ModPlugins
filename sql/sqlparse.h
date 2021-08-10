@@ -51,8 +51,17 @@ struct SqlOrderBy {
   std::vector<bool> isDesc;
 };
 
+struct SqlJoin {
+  bool hasJoin;
+  std::string table;
+  std::string col1;
+  std::string col2;
+  OperatorType type;
+};
+
 struct SqlSelect {
   std::vector<std::string> columns;
+  SqlJoin join;
   int limit;
   SqlFilter filter;
   SqlOrderBy orderBy;

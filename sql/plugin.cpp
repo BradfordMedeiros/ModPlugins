@@ -239,6 +239,10 @@ int main(int argc, char *argv[]){
       .test = testCompileSqlSelect,
     },
     TestCase {
+      .name = "testCompileSqlSelectJoin",
+      .test = testCompileSqlSelectJoin,
+    },
+    TestCase {
       .name = "testCompileSqlUpdate",
       .test = testCompileSqlUpdate,
     },

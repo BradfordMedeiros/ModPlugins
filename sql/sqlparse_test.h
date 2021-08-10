@@ -28,6 +28,7 @@ void testParserIncomplete();
 void testCompileSqlCreateTable();
 void testCompileSqlDropTable();
 void testCompileSqlSelect();
+void testCompileSqlSelectJoin();
 void testCompileSqlUpdate();
 
 #endif
