@@ -25,22 +25,32 @@ void deleteTable(std::string tableName){
 
 struct TableData {
   std::vector<std::string> header;
-  std::vector<std::string> rawRows;
+  std::vector<std::vector<std::string>> rows;
 };
+
 TableData readTableData(std::string tableName){
   auto tableContent = loadFile(tablePath(tableName));
   auto rawRows = split(tableContent, '\n');
   auto header = split(rawRows.at(0), ',');
+
+  std::vector<std::vector<std::string>> rows;
+  for (int i = 1; i < rawRows.size(); i++){
+    auto columnContent = split(rawRows.at(i), ',');
+    rows.push_back(columnContent);
+  }
+
   return TableData{
     .header = header,
-    .rawRows = rawRows,
+    .rows = rows,
   };
+}
+std::vector<std::string> readHeader(std::string tableName){
+  return readTableData(tableName).header;
 }
 
 std::vector<std::vector<std::string>> describeTable(std::string tableName){
   std::vector<std::vector<std::string>> rows;
-  auto tableData = readTableData(tableName);
-  for (auto header : tableData.header){
+  for (auto header : readHeader(tableName)){
     rows.push_back({ header });
   }
   return rows;
@@ -140,18 +150,60 @@ std::string hashGroupingKey(GroupingKey& key){
   return hash;
 }
 
+struct JoinColumns {
+  std::string table1col;
+  std::string table2col;
+};
+JoinColumns parseJoinColumns(std::string col1, std::string col2){
+  // col1 is like atable.name = mytable.name 
+  return JoinColumns {
+    .table1col = "name",
+    .table2col = "name",
+  };
+}
+
+
+TableData joinTableData(std::string table1, TableData& data1, std::string table2, TableData& data2, std::string col1, std::string col2, OperatorType op){
+  auto joinColumns = parseJoinColumns(col1, col2);
+
+  auto columnIndex1 = getColumnIndexs(data1.header, { joinColumns.table1col }).at(0);
+  auto columnIndex2 = getColumnIndexs(data2.header, { joinColumns.table2col }).at(0);
+
+  std::vector<std::string> header;
+  for (auto col : data1.header){
+    header.push_back(table1 + "." + col);
+  }
+  for (auto col : data2.header){
+    header.push_back(table2 + "." + col);
+  }
+
+  std::vector<std::vector<std::string>> rows;
+  /*for (int i = 0; i < data1.rawRows.size(); i++){
+    for (int j = 0; j < data2.rawRows.size(); j++){
+      auto matches = data1.rawRows.at(i) == data2.rawRows.at(j);
+      for (auto colValue : data1.rawRows.at(i)){
+
+      }
+    }
+  }*/
+
+  return TableData {
+    .header = header,
+    .rows = rows,
+  };
+}
+
 
 std::vector<std::vector<std::string>> select(std::string tableName, std::vector<std::string> columns, SqlJoin join, SqlFilter filter, SqlOrderBy orderBy, std::vector<std::string> groupBy, int limit){
   auto tableData = readTableData(tableName);
-  std::vector<std::vector<std::string>> rows;
 
-  for (int i = 1; i < tableData.rawRows.size(); i++){
-    auto columnContent = split(tableData.rawRows.at(i), ',');
-    rows.push_back(columnContent);
-  }
+  /*if (join.hasJoin){
+    TableData additionalTableData = readTableData(join.table);
+    tableData = joinTableData(tableName, tableData, join.table, additionalTableData, join.col1, join.col2, join.type);
+  }*/
 
   auto orderIndexs = getColumnIndexs(tableData.header, orderBy.cols);
-  std::sort (rows.begin(), rows.end(), [&orderIndexs, &orderBy](std::vector<std::string>& row1, std::vector<std::string>& row2) -> bool {
+  std::sort (tableData.rows.begin(), tableData.rows.end(), [&orderIndexs, &orderBy](std::vector<std::string>& row1, std::vector<std::string>& row2) -> bool {
     for (int i = 0; i < orderIndexs.size(); i++){
       auto index = orderIndexs.at(i);
       auto value = strcmp(row1.at(index).c_str(), row2.at(index).c_str()); // this is wrong because row is already the new one 
@@ -176,7 +228,7 @@ std::vector<std::vector<std::string>> select(std::string tableName, std::vector<
   auto groupingIndexs = getColumnIndexs(tableData.header, groupBy);
   std::set<std::string> groupingKeysHash;
 
-  for (auto row : rows){
+  for (auto row : tableData.rows){
     if (filter.hasFilter){
       auto columnValue = row.at(filterIndex);
       auto passFilter = passesFilter(columnValue, filter);
@@ -184,7 +236,7 @@ std::vector<std::vector<std::string>> select(std::string tableName, std::vector<
         continue;
       }
     }
-    if (limit >= 0 && rows.size() >= limit){
+    if (limit >= 0 && tableData.rows.size() >= limit){
       break;
     }
 
@@ -227,7 +279,7 @@ std::string createRow(std::vector<std::string> values){
 }
 
 void insert(std::string tableName, std::vector<std::string> columns, std::vector<std::vector<std::string>> values){
-  auto header = readTableData(tableName).header;
+  auto header = readHeader(tableName);
   auto indexs = getColumnIndexs(header, columns);
 
   std::string newContent = "";
@@ -243,10 +295,10 @@ void insert(std::string tableName, std::vector<std::string> columns, std::vector
 }
 
 void update(std::string tableName, std::vector<std::string>& columns, std::vector<std::string>& values){
-  auto tableData = readTableData(tableName);
-  auto allRows = select(tableName, tableData.header, {}, SqlFilter{ .hasFilter = false }, SqlOrderBy{}, {}, -1);
+  auto header = readHeader(tableName);
+  auto allRows = select(tableName, header, {}, SqlFilter{ .hasFilter = false }, SqlOrderBy{}, {}, -1);
 
-  std::string content = createHeader(tableData.header);
+  std::string content = createHeader(header);
   for (auto row : allRows){
     if (false){ // this is wrong
       content = content + "this one should be updated\n";
@@ -258,12 +310,12 @@ void update(std::string tableName, std::vector<std::string>& columns, std::vecto
 }
 
 void deleteRows(std::string tableName, SqlFilter& filter){
-  auto tableData = readTableData(tableName);
-  auto rowsToKeep = select(tableName, tableData.header, {}, SqlFilter{}, SqlOrderBy{}, {}, -1);
-  std::string content = createHeader(tableData.header);
+  auto header = readHeader(tableName);
+  auto rowsToKeep = select(tableName, header, {}, SqlFilter{}, SqlOrderBy{}, {}, -1);
+  std::string content = createHeader(header);
   for (auto row : rowsToKeep){
     if (filter.hasFilter){
-      auto filterIndex = getColumnIndexs(tableData.header, { filter.column }).at(0);
+      auto filterIndex = getColumnIndexs(header, { filter.column }).at(0);
       auto column = row.at(filterIndex);
       auto passFilter = passesFilter(column, filter);
       if (passFilter){
