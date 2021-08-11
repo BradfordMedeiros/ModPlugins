@@ -97,13 +97,16 @@ std::vector<int> getColumnIndexs(std::vector<std::string> header, std::vector<st
   std::vector<int> indexs;
   for (auto column : columns){
     bool foundCol = false;
-    for (int i = 0; i < header.size(), !foundCol; i++){
+    for (int i = 0; i < header.size(); i++){
       if (header.at(i) == column){
         indexs.push_back(i);
         foundCol = true;
       }
     }
-    assert(foundCol);
+    if (!foundCol){
+      std::cout << "could not find col: " << column << std::endl;
+      assert(foundCol);
+    }
   }
   return indexs;
 }
@@ -179,49 +182,6 @@ std::string hashGroupingKey(GroupingKey& key){
   return hash;
 }
 
-struct JoinColumns {
-  std::string table1col;
-  std::string table2col;
-};
-JoinColumns parseJoinColumns(std::string col1, std::string col2){
-  // col1 is like atable.name = mytable.name 
-  return JoinColumns {
-    .table1col = "name",
-    .table2col = "name",
-  };
-}
-
-
-TableData joinTableData(std::string table1, TableData& data1, std::string table2, TableData& data2, std::string col1, std::string col2, OperatorType op){
-  auto joinColumns = parseJoinColumns(col1, col2);
-
-  auto columnIndex1 = getColumnIndexs(data1.header, { joinColumns.table1col }).at(0);
-  auto columnIndex2 = getColumnIndexs(data2.header, { joinColumns.table2col }).at(0);
-
-  std::vector<std::string> header;
-  for (auto col : data1.header){
-    header.push_back(table1 + "." + col);
-  }
-  for (auto col : data2.header){
-    header.push_back(table2 + "." + col);
-  }
-
-  std::vector<std::vector<std::string>> rows;
-  /*for (int i = 0; i < data1.rawRows.size(); i++){
-    for (int j = 0; j < data2.rawRows.size(); j++){
-      auto matches = data1.rawRows.at(i) == data2.rawRows.at(j);
-      for (auto colValue : data1.rawRows.at(i)){
-
-      }
-    }
-  }*/
-
-  return TableData {
-    .header = header,
-    .rows = rows,
-  };
-}
-
 std::vector<std::string> fullQualifiedNames(std::string tablename, std::vector<std::string>& columns){
   std::vector<std::string> names;
   for (auto col : columns){
@@ -230,8 +190,60 @@ std::vector<std::string> fullQualifiedNames(std::string tablename, std::vector<s
   return names;
 }
 
+TableData joinTableData(std::string table1, TableData& data1, std::string table2, TableData& data2, std::string col1, std::string col2, OperatorType op){
+  std::vector<std::string> joinCol1 = { col1 };
+  std::vector<std::string> joinCol2 = { col2 };
+
+  auto fullyQualifiedCols1 = fullQualifiedNames(table1, joinCol1);
+  auto fullyQualifiedCols2 = fullQualifiedNames(table2, joinCol2);
+
+  auto columnIndex1 = getColumnIndexs(data1.header, fullyQualifiedCols1).at(0);
+  auto columnIndex2 = getColumnIndexs(data2.header, fullyQualifiedCols2).at(0);
+
+  std::vector<std::string> header;
+  for (auto col : fullQualifiedNames(table1, data1.header)){
+    header.push_back(col);
+  }
+  for (auto col : fullQualifiedNames(table2, data2.header)){
+    header.push_back(col);
+  }
+
+  std::vector<std::vector<std::string>> rows;
+  for (int i = 0; i < data1.rows.size(); i++){
+    for (int j = 0; j < data2.rows.size(); j++){
+      auto colOneValue = data1.rows.at(i).at(columnIndex1);
+      auto colTwoValue = data2.rows.at(j).at(columnIndex2);
+      auto matches =  colOneValue == colTwoValue;
+      if (!matches){
+        continue;
+      }
+      std::vector<std::string> row;
+      for (auto colValue : data1.rows.at(i)){
+        row.push_back(colValue);
+      }
+      for (auto colValue : data2.rows.at(j)){
+        row.push_back(colValue);
+      }
+      rows.push_back(row);
+    }
+  }
+
+  return TableData {
+    .header = header,
+    .rows = rows,
+  };
+}
+
+
+
 std::vector<std::vector<std::string>> select(std::string tableName, std::vector<std::string> columns, SqlJoin join, SqlFilter filter, SqlOrderBy orderBy, std::vector<std::string> groupBy, int limit){
   auto tableData = readTableData(tableName);
+
+  if (join.hasJoin){
+    TableData additionalTableData = readTableData(join.table);
+    tableData = joinTableData(tableName, tableData, join.table, additionalTableData, join.col1, join.col2, join.type);
+  }
+
   auto qualifiedColumns = fullQualifiedNames(tableName, columns);
   auto qualifiedOrderBy = fullQualifiedNames(tableName, orderBy.cols);
   auto qualifiedGroupBy = fullQualifiedNames(tableName, groupBy);
@@ -242,10 +254,7 @@ std::vector<std::vector<std::string>> select(std::string tableName, std::vector<
     auto qualedNames = fullQualifiedNames(tableName, filterColumns); 
     qualifiedFilter = qualedNames;
   }
-  /*if (join.hasJoin){
-    TableData additionalTableData = readTableData(join.table);
-    tableData = joinTableData(tableName, tableData, join.table, additionalTableData, join.col1, join.col2, join.type);
-  }*/
+
 
   auto orderIndexs = getColumnIndexs(tableData.header, qualifiedOrderBy);
   std::sort (tableData.rows.begin(), tableData.rows.end(), [&orderIndexs, &orderBy](std::vector<std::string>& row1, std::vector<std::string>& row2) -> bool {
