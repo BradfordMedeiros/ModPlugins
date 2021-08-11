@@ -80,7 +80,7 @@ std::vector<std::string> readHeader(std::string tableName){
 std::vector<std::vector<std::string>> describeTable(std::string tableName){
   std::vector<std::vector<std::string>> rows;
   for (auto header : readHeader(tableName)){
-    rows.push_back({ header });
+    rows.push_back({ dequalifyColumnName(header) });
   }
   return rows;
 }
