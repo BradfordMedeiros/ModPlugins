@@ -210,10 +210,19 @@ TableData joinTableData(std::string table1, TableData& data1, std::string table2
 
   std::vector<std::vector<std::string>> rows;
   for (int i = 0; i < data1.rows.size(); i++){
+    bool hasMatch = false;
+    auto row2Length = data2.rows.at(0).size();
     for (int j = 0; j < data2.rows.size(); j++){
       auto colOneValue = data1.rows.at(i).at(columnIndex1);
       auto colTwoValue = data2.rows.at(j).at(columnIndex2);
       auto matches =  colOneValue == colTwoValue;
+      
+      //std::cout << "matches? : " << matches << std::endl;
+      //std::cout <<" Comparing: (" << col1 << " - " << col2 << ") -> " << colOneValue << " = " << colTwoValue << std::endl; 
+
+      if (matches){
+        hasMatch = true;
+      }
       if (!matches){
         continue;
       }
@@ -223,6 +232,16 @@ TableData joinTableData(std::string table1, TableData& data1, std::string table2
       }
       for (auto colValue : data2.rows.at(j)){
         row.push_back(colValue);
+      }
+      rows.push_back(row);
+    }
+    if (!hasMatch){
+      std::vector<std::string> row;
+      for (auto colValue : data1.rows.at(i)){
+        row.push_back(colValue);
+      }
+      for (int j = 0; j < row2Length; j++){
+        row.push_back("NULL");
       }
       rows.push_back(row);
     }
