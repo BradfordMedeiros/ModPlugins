@@ -1,6 +1,59 @@
+- joins
+select name, atable.age, age, money from atable left join mytable on atable.name = mytable.name 
+
+bob,10
+apple,100
+bob, 50 (X)
+
+bob,100000
+apple,20000
+apple,500 (X)
+
+without (X) included
+bob,10,100000
+apple,100,20000
+
+but what happens if (X) included?
+bob,10,100000
+bob,50,100000
+apple,100,20000
+apple,100,20000
+
+So really this is distribute
+! every time there is a match on the join expression, you add a new row
+
+
 - AND / OR
 - subqueries eventually!
 - aggregators
 - types
-- joins
 - general expressions
+
+================
+- views
+create view clientupdatable (  // creates a whitelist of rows and columns
+  select name from users
+)
+(insert into clientupdatable (name, age) values ("bob", 14)) // age would get rejected b/c not in the view
+
+
+////////// so imagine we want to keep players count //////
+(sql 
+  (sql-compile 
+    (string-append "insert into players (connection-hash, username) values (" 
+      connectionHash 
+      ", " 
+      username
+      ")"
+    )
+  )
+)
+
+bob,100
+peter,1000
+joe,129
+bob,101
+
+100000,bob
+20,peter
+0,joe

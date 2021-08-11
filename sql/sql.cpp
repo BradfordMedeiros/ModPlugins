@@ -4,6 +4,24 @@ std::string escapeCSVEntry(std::string data){
   // maybe just ban commas and newlines for now? 
   return data;
 }
+std::string qualifyColumnName(std::string tablename, std::string columnname){
+  auto parts = split(columnname, '.');
+  auto isQualified = parts.size() == 2;
+  assert(parts.size() == 1 || parts.size() == 2);
+  if (isQualified){
+    return columnname;
+  }
+  return tablename + "." + columnname;
+}
+std::string dequalifyColumnName(std::string columnname){
+  auto parts = split(columnname, '.');
+  auto isQualified = parts.size() == 2;
+  assert(parts.size() == 1 || parts.size() == 2);
+  if (isQualified){
+    return parts.at(1);
+  }
+  return parts.at(0);
+}
 
 std::string basePath = "./res/state/";
 std::string tablePath(std::string tableName){
