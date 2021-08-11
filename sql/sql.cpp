@@ -57,6 +57,10 @@ TableData readTableData(std::string tableName){
   auto tableContent = loadFile(tablePath(tableName));
   auto rawRows = split(tableContent, '\n');
   auto header = split(rawRows.at(0), ',');
+  std::vector<std::string> qualifiedHeader;
+  for (auto col : header){
+    qualifiedHeader.push_back(qualifyColumnName(tableName, col));
+  }
 
   std::vector<std::vector<std::string>> rows;
   for (int i = 1; i < rawRows.size(); i++){
@@ -65,7 +69,7 @@ TableData readTableData(std::string tableName){
   }
 
   return TableData{
-    .header = header,
+    .header = qualifiedHeader,
     .rows = rows,
   };
 }
@@ -218,16 +222,32 @@ TableData joinTableData(std::string table1, TableData& data1, std::string table2
   };
 }
 
+std::vector<std::string> fullQualifiedNames(std::string tablename, std::vector<std::string>& columns){
+  std::vector<std::string> names;
+  for (auto col : columns){
+    names.push_back(qualifyColumnName(tablename, col));
+  }
+  return names;
+}
 
 std::vector<std::vector<std::string>> select(std::string tableName, std::vector<std::string> columns, SqlJoin join, SqlFilter filter, SqlOrderBy orderBy, std::vector<std::string> groupBy, int limit){
   auto tableData = readTableData(tableName);
+  auto qualifiedColumns = fullQualifiedNames(tableName, columns);
+  auto qualifiedOrderBy = fullQualifiedNames(tableName, orderBy.cols);
+  auto qualifiedGroupBy = fullQualifiedNames(tableName, groupBy);
 
+  std::vector<std::string> qualifiedFilter;
+  if (filter.hasFilter){
+    std::vector<std::string> filterColumns = { filter.column };
+    auto qualedNames = fullQualifiedNames(tableName, filterColumns); 
+    qualifiedFilter = qualedNames;
+  }
   /*if (join.hasJoin){
     TableData additionalTableData = readTableData(join.table);
     tableData = joinTableData(tableName, tableData, join.table, additionalTableData, join.col1, join.col2, join.type);
   }*/
 
-  auto orderIndexs = getColumnIndexs(tableData.header, orderBy.cols);
+  auto orderIndexs = getColumnIndexs(tableData.header, qualifiedOrderBy);
   std::sort (tableData.rows.begin(), tableData.rows.end(), [&orderIndexs, &orderBy](std::vector<std::string>& row1, std::vector<std::string>& row2) -> bool {
     for (int i = 0; i < orderIndexs.size(); i++){
       auto index = orderIndexs.at(i);
@@ -246,11 +266,11 @@ std::vector<std::vector<std::string>> select(std::string tableName, std::vector<
   std::vector<std::vector<std::string>> finalRows;
   auto filterIndex = -1;
   if (filter.hasFilter){
-    filterIndex = getColumnIndexs(tableData.header, { filter.column }).at(0);
+    filterIndex = getColumnIndexs(tableData.header, qualifiedFilter).at(0);
   }
 
-  auto indexs = getColumnsStarSelection(tableData.header, columns);
-  auto groupingIndexs = getColumnIndexs(tableData.header, groupBy);
+  auto indexs = getColumnsStarSelection(tableData.header, qualifiedColumns);
+  auto groupingIndexs = getColumnIndexs(tableData.header, qualifiedGroupBy);
   std::set<std::string> groupingKeysHash;
 
   for (auto row : tableData.rows){
