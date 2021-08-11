@@ -14,10 +14,17 @@ std::string createHeader(std::vector<std::string> columns){
   return join(columns, ',') + "\n";
 }
 
+bool isValidColumnName(std::string columnname){
+  return (columnname.find('.') == std::string::npos) && (columnname.find(',') == std::string::npos) && (columnname.find('\n') == std::string::npos);
+}
 void createTable(std::string tableName, std::vector<std::string> columns){
   auto filepath = tablePath(tableName);
+  for (auto column : columns){
+    assert(isValidColumnName(column));
+  }
   saveFile(filepath, createHeader(columns));
 }
+
 void deleteTable(std::string tableName){
   auto filepath = tablePath(tableName);
   std::remove(filepath.c_str());
