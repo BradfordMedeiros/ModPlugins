@@ -4,6 +4,7 @@ std::string escapeCSVEntry(std::string data){
   // maybe just ban commas and newlines for now? 
   return data;
 }
+
 std::string qualifyColumnName(std::string tablename, std::string columnname){
   auto parts = split(columnname, '.');
   auto isQualified = parts.size() == 2;
@@ -20,6 +21,15 @@ std::string dequalifyColumnName(std::string columnname){
   if (isQualified){
     return parts.at(1);
   }
+  return parts.at(0);
+}
+std::string tableFromQualifiedName(std::string columnname){
+  auto parts = split(columnname, '.');
+  auto isQualified = parts.size() == 2;
+  assert(parts.size() == 1 || parts.size() == 2);
+  if (!isQualified){
+    return "";
+  }  
   return parts.at(0);
 }
 
@@ -93,6 +103,13 @@ std::vector<std::vector<std::string>> showTables(){
   return files;
 }
 
+void printColumns(std::vector<std::string> header){
+  for (auto col : header){
+    std::cout << col << " ";
+  }
+  std::cout << std::endl;
+}
+
 std::vector<int> getColumnIndexs(std::vector<std::string> header, std::vector<std::string> columns){
   std::vector<int> indexs;
   for (auto column : columns){
@@ -105,6 +122,8 @@ std::vector<int> getColumnIndexs(std::vector<std::string> header, std::vector<st
     }
     if (!foundCol){
       std::cout << "could not find col: " << column << std::endl;
+      std::cout << "Header: ";
+      printColumns(header);
       assert(foundCol);
     }
   }
@@ -190,15 +209,63 @@ std::vector<std::string> fullQualifiedNames(std::string tablename, std::vector<s
   return names;
 }
 
+struct JoinColumns {
+  std::string table1Col;
+  std::string table2Col;
+};
+
+bool columnNameInHeader(std::vector<std::string> header, std::string qualifiedColname){
+  for (auto col : header){
+    if (qualifiedColname == col){
+      return true;
+    }
+  }
+  return false;
+}
+
+std::string qualifyNameOrLeaveQualified(std::string table, std::string col1){
+  // if is qualified leave
+  if (tableFromQualifiedName(col1) != ""){
+    return col1;
+  }
+  return qualifyColumnName(table, col1);
+}
+
+
+bool assignQualifiedColIfBelongs(std::string table, TableData& data, std::string col, std::string* outValue){
+  auto colTable = qualifyNameOrLeaveQualified(table, col);
+  for (auto col : data.header){
+    if (col == colTable){
+      *outValue = colTable;
+      return true;
+    }
+  }
+  return false;
+}
+
+JoinColumns figureOutJoinCols(std::string table1, TableData& data1, std::string table2, TableData& data2, std::string col1, std::string col2){
+  std::string table1Col = "";
+  std::string table2Col = "";
+
+  auto col1IsTable1 = assignQualifiedColIfBelongs(table1, data1, col1, &table1Col);
+  auto col1IsTable2 = assignQualifiedColIfBelongs(table2, data2, col1, &table2Col);
+
+  auto col2IsTable1 = assignQualifiedColIfBelongs(table1, data1, col2, &table1Col);
+  auto col2IsTable2 = assignQualifiedColIfBelongs(table2, data2, col2, &table2Col);
+
+  assert(table1Col != "");
+  assert(table2Col != "");
+
+  return JoinColumns {
+    .table1Col = table1Col,
+    .table2Col = table2Col,
+  };
+}
+
 TableData joinTableData(std::string table1, TableData& data1, std::string table2, TableData& data2, std::string col1, std::string col2, OperatorType op){
-  std::vector<std::string> joinCol1 = { col1 };
-  std::vector<std::string> joinCol2 = { col2 };
-
-  auto fullyQualifiedCols1 = fullQualifiedNames(table1, joinCol1);
-  auto fullyQualifiedCols2 = fullQualifiedNames(table2, joinCol2);
-
-  auto columnIndex1 = getColumnIndexs(data1.header, fullyQualifiedCols1).at(0);
-  auto columnIndex2 = getColumnIndexs(data2.header, fullyQualifiedCols2).at(0);
+  auto joinCols = figureOutJoinCols(table1, data1, table2, data2, col1, col2);
+  auto columnIndex1 = getColumnIndexs(data1.header,  { joinCols.table1Col }).at(0);
+  auto columnIndex2 = getColumnIndexs(data2.header,  { joinCols.table2Col }).at(0);
 
   std::vector<std::string> header;
   for (auto col : fullQualifiedNames(table1, data1.header)){
@@ -259,7 +326,12 @@ std::vector<std::vector<std::string>> select(std::string tableName, std::vector<
   auto tableData = readTableData(tableName);
 
   if (join.hasJoin){
+    if (tableName == join.table){
+      std::cout << "cannot join a table on itself" << std::endl;
+      assert(false);
+    }
     TableData additionalTableData = readTableData(join.table);
+    std::cout << "main table: " << tableName << " join table " << join.table << std::endl;
     tableData = joinTableData(tableName, tableData, join.table, additionalTableData, join.col1, join.col2, join.type);
   }
 
