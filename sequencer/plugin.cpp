@@ -180,10 +180,9 @@ StateMachine* getMachineFromScmType(SCM value){
   return obj; 
 }
 
-StateMachine (*_createStateMachine)(std::vector<State> states);
 SCM scmStateMachine(SCM states){
   auto statemachineobj = (StateMachine*)scm_gc_malloc(sizeof(StateMachine), "statemachine");
-  auto machine = _createStateMachine(fromScmStateList(states));
+  auto machine = createStateMachine(fromScmStateList(states));
   *statemachineobj = machine;
   return scm_make_foreign_object_1(stateMachineType, statemachineobj);
 }
