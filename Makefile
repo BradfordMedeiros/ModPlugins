@@ -5,6 +5,7 @@ clean:
 	@(cd ./dialog && make clean)
 	@(cd ./sql && make clean)
 	@(cd ./sequencer && make clean)
+	@(rm -r ./build)
 
 build/dialog.so: ./dialog/plugin.so
 	@mkdir -p ./build

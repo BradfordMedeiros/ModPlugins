@@ -3,6 +3,8 @@
 #include "./sql.h"
 #include "./sqlparse.h"
 
+std::string dataDir = "./res/state/";
+
 SCM nestedVecToSCM(std::vector<std::vector<std::string>>& list){
   SCM scmList = scm_make_list(scm_from_unsigned_integer(list.size()), scm_from_unsigned_integer(0));
   for (int i = 0; i < list.size(); i++){
@@ -31,7 +33,7 @@ SqlQuery* queryFromForeign(SCM sqlQuery){
 
 SCM scmSql(SCM sqlQuery){
   auto query = queryFromForeign(sqlQuery);
-  auto sqlResult = executeSqlQuery(*query);
+  auto sqlResult = executeSqlQuery(*query, dataDir);
   return nestedVecToSCM(sqlResult);
 } 
 
@@ -59,6 +61,17 @@ void registerGuileTypes(){
   sqlObjectType = scm_make_foreign_object_type(scm_from_utf8_symbol("sqlquery"), scm_list_1(scm_from_utf8_symbol("data")), finalizeSqlObjectType);
 }
 
+typedef std::map<std::string, std::string> (*func_map)();
+void registerGetArgs(func_map getArgsFn) asm("registerGetArgs");
+void registerGetArgs(func_map getArgsFn){
+  std::cout << "SQL_INFO: registered get args fn: " << std::endl;
+  auto args = getArgsFn();
+  if (args.find("sqldir") != args.end()){
+    dataDir = args.at("sqldir");
+  }
+}
+
+
 #ifdef BINARY_MODE
 
 #include "./sqlparse_test.h"
@@ -77,7 +90,7 @@ int main(int argc, char *argv[]){
     }else if (strcmp(argv[1], "script") == 0){
       assert(argc >= 3);
       auto sqlQuery = compileSqlQuery(argv[2]);
-      auto rows = executeSqlQuery(sqlQuery);
+      auto rows = executeSqlQuery(sqlQuery, dataDir);
       for (auto row : rows){
         std::cout << join(row, ' ') << std::endl;
       }
@@ -100,7 +113,7 @@ int main(int argc, char *argv[]){
         return -1;
       }
       for (auto query : queries){
-        auto rows = executeSqlQuery(query);
+        auto rows = executeSqlQuery(query, dataDir);
         for (auto row : rows){
           std::cout << join(row, ' ') << std::endl;
         }
@@ -140,7 +153,7 @@ int main(int argc, char *argv[]){
         auto sqlQuery = compileSqlQuery(value);
         if(sqlQuery.validQuery){
           if (executeQuery){
-            auto rows = executeSqlQuery(sqlQuery);
+            auto rows = executeSqlQuery(sqlQuery, dataDir);
             for (auto row : rows){
               std::cout << join(row, ' ') << std::endl;
             }

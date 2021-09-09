@@ -33,8 +33,7 @@ std::string tableFromQualifiedName(std::string columnname){
   return parts.at(0);
 }
 
-std::string basePath = "./res/state/";
-std::string tablePath(std::string tableName){
+std::string tablePath(std::string tableName, std::string basePath){
   return basePath + tableName + ".csv";  // TODO do paths better bro
 }
 
@@ -45,16 +44,16 @@ std::string createHeader(std::vector<std::string> columns){
 bool isValidColumnName(std::string columnname){
   return (columnname.find('.') == std::string::npos) && (columnname.find(',') == std::string::npos) && (columnname.find('\n') == std::string::npos);
 }
-void createTable(std::string tableName, std::vector<std::string> columns){
-  auto filepath = tablePath(tableName);
+void createTable(std::string tableName, std::vector<std::string> columns, std::string basePath){
+  auto filepath = tablePath(tableName, basePath);
   for (auto column : columns){
     assert(isValidColumnName(column));
   }
   saveFile(filepath, createHeader(columns));
 }
 
-void deleteTable(std::string tableName){
-  auto filepath = tablePath(tableName);
+void deleteTable(std::string tableName, std::string basePath){
+  auto filepath = tablePath(tableName, basePath);
   std::remove(filepath.c_str());
 }
 
@@ -63,8 +62,8 @@ struct TableData {
   std::vector<std::vector<std::string>> rows;
 };
 
-TableData readTableData(std::string tableName){
-  auto tableContent = loadFile(tablePath(tableName));
+TableData readTableData(std::string tableName, std::string basePath){
+  auto tableContent = loadFile(tablePath(tableName, basePath));
   auto rawRows = split(tableContent, '\n');
   auto header = split(rawRows.at(0), ',');
   std::vector<std::string> qualifiedHeader;
@@ -83,18 +82,18 @@ TableData readTableData(std::string tableName){
     .rows = rows,
   };
 }
-std::vector<std::string> readHeader(std::string tableName){
-  return readTableData(tableName).header;
+std::vector<std::string> readHeader(std::string tableName, std::string basePath){
+  return readTableData(tableName, basePath).header;
 }
 
-std::vector<std::vector<std::string>> describeTable(std::string tableName){
+std::vector<std::vector<std::string>> describeTable(std::string tableName, std::string basePath){
   std::vector<std::vector<std::string>> rows;
-  for (auto header : readHeader(tableName)){
+  for (auto header : readHeader(tableName, basePath)){
     rows.push_back({ dequalifyColumnName(header) });
   }
   return rows;
 }
-std::vector<std::vector<std::string>> showTables(){
+std::vector<std::vector<std::string>> showTables(std::string basePath){
   auto allFiles = listAllCsvFilesStems(basePath);
   std::vector<std::vector<std::string>> files;
   for (auto file : allFiles){
@@ -322,15 +321,15 @@ TableData joinTableData(std::string table1, TableData& data1, std::string table2
 
 
 
-std::vector<std::vector<std::string>> select(std::string tableName, std::vector<std::string> columns, SqlJoin join, SqlFilter filter, SqlOrderBy orderBy, std::vector<std::string> groupBy, int limit){
-  auto tableData = readTableData(tableName);
+std::vector<std::vector<std::string>> select(std::string tableName, std::vector<std::string> columns, SqlJoin join, SqlFilter filter, SqlOrderBy orderBy, std::vector<std::string> groupBy, int limit, std::string basePath){
+  auto tableData = readTableData(tableName, basePath);
 
   if (join.hasJoin){
     if (tableName == join.table){
       std::cout << "cannot join a table on itself" << std::endl;
       assert(false);
     }
-    TableData additionalTableData = readTableData(join.table);
+    TableData additionalTableData = readTableData(join.table, basePath);
     std::cout << "main table: " << tableName << " join table " << join.table << std::endl;
     tableData = joinTableData(tableName, tableData, join.table, additionalTableData, join.col1, join.col2, join.type);
   }
@@ -423,8 +422,8 @@ std::string createRow(std::vector<std::string> values){
   return join(values, ',') + "\n";
 }
 
-void insert(std::string tableName, std::vector<std::string> columns, std::vector<std::vector<std::string>> values){
-  auto header = readHeader(tableName);
+void insert(std::string tableName, std::vector<std::string> columns, std::vector<std::vector<std::string>> values, std::string basePath){
+  auto header = readHeader(tableName, basePath);
   auto indexs = getColumnIndexs(header, columns);
 
   std::string newContent = "";
@@ -436,12 +435,12 @@ void insert(std::string tableName, std::vector<std::string> columns, std::vector
     }
     newContent = newContent + createRow(valuesToInsert);
   }
-  appendFile(tablePath(tableName), newContent);
+  appendFile(tablePath(tableName, basePath), newContent);
 }
 
-void update(std::string tableName, std::vector<std::string>& columns, std::vector<std::string>& values){
-  auto header = readHeader(tableName);
-  auto allRows = select(tableName, header, {}, SqlFilter{ .hasFilter = false }, SqlOrderBy{}, {}, -1);
+void update(std::string tableName, std::vector<std::string>& columns, std::vector<std::string>& values, std::string basePath){
+  auto header = readHeader(tableName, basePath);
+  auto allRows = select(tableName, header, {}, SqlFilter{ .hasFilter = false }, SqlOrderBy{}, {}, -1, basePath);
 
   std::string content = createHeader(header);
   for (auto row : allRows){
@@ -451,12 +450,12 @@ void update(std::string tableName, std::vector<std::string>& columns, std::vecto
       content = content + createRow(row);
     }
   }
-  saveFile(tablePath(tableName), content);
+  saveFile(tablePath(tableName, basePath), content);
 }
 
-void deleteRows(std::string tableName, SqlFilter& filter){
-  auto header = readHeader(tableName);
-  auto rowsToKeep = select(tableName, header, {}, SqlFilter{}, SqlOrderBy{}, {}, -1);
+void deleteRows(std::string tableName, SqlFilter& filter, std::string basePath){
+  auto header = readHeader(tableName, basePath);
+  auto rowsToKeep = select(tableName, header, {}, SqlFilter{}, SqlOrderBy{}, {}, -1, basePath);
   std::string content = createHeader(header);
   for (auto row : rowsToKeep){
     if (filter.hasFilter){
@@ -469,42 +468,42 @@ void deleteRows(std::string tableName, SqlFilter& filter){
     }
     content = content + createRow(row);
   }
-  saveFile(tablePath(tableName), content);
+  saveFile(tablePath(tableName, basePath), content);
 }
 
-std::vector<std::vector<std::string>> executeSqlQuery(SqlQuery& query){
+std::vector<std::vector<std::string>> executeSqlQuery(SqlQuery& query, std::string dataDir){
   assert(query.validQuery);
   if (query.type == SQL_SELECT){
     auto selectData = std::get_if<SqlSelect>(&query.queryData);
     assert(selectData != NULL);
-    return select(query.table, selectData -> columns, selectData -> join, selectData -> filter, selectData -> orderBy, selectData -> groupby, selectData -> limit);
+    return select(query.table, selectData -> columns, selectData -> join, selectData -> filter, selectData -> orderBy, selectData -> groupby, selectData -> limit, dataDir);
   }else if (query.type == SQL_INSERT){
     auto insertData = std::get_if<SqlInsert>(&query.queryData);
     assert(insertData != NULL);
-    insert(query.table, insertData -> columns, insertData -> values);
+    insert(query.table, insertData -> columns, insertData -> values, dataDir);
     return {};
   }else if (query.type == SQL_UPDATE){
     auto updateData = std::get_if<SqlUpdate>(&query.queryData);
     assert(updateData != NULL);
-    update(query.table, updateData -> columns, updateData -> values);
+    update(query.table, updateData -> columns, updateData -> values, dataDir);
     return {};
   }else if (query.type == SQL_DELETE){
     auto deleteData = std::get_if<SqlDelete>(&query.queryData);
     assert(deleteData != NULL);
-    deleteRows(query.table, deleteData -> filter);
+    deleteRows(query.table, deleteData -> filter, dataDir);
     return {};
   }else if (query.type == SQL_CREATE_TABLE){
     auto createData = std::get_if<SqlCreate>(&query.queryData);
     assert(createData != NULL);
-    createTable(query.table, createData -> columns);
+    createTable(query.table, createData -> columns, dataDir);
     return {};
   }else if (query.type == SQL_DELETE_TABLE){
-    deleteTable(query.table);
+    deleteTable(query.table, dataDir);
     return {};
   }else if (query.type == SQL_DESCRIBE){
-    return describeTable(query.table);
+    return describeTable(query.table, dataDir);
   }else if (query.type == SQL_SHOW_TABLES){
-    return showTables();
+    return showTables(dataDir);
   }
   assert(false);
   return {};
