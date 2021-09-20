@@ -372,7 +372,8 @@ std::vector<std::vector<std::string>> select(std::string tableName, std::vector<
   auto groupingIndexs = getColumnIndexs(tableData.header, qualifiedGroupBy);
   std::set<std::string> groupingKeysHash;
 
-  for (auto row : tableData.rows){
+  for (int i = 0; i < tableData.rows.size(); i++){
+    auto row = tableData.rows.at(i);
     if (filter.hasFilter){
       auto columnValue = row.at(filterIndex);
       auto passFilter = passesFilter(columnValue, filter);
@@ -380,7 +381,7 @@ std::vector<std::vector<std::string>> select(std::string tableName, std::vector<
         continue;
       }
     }
-    if (limit >= 0 && tableData.rows.size() >= limit){
+    if (limit >= 0 && i >= limit){
       break;
     }
 
