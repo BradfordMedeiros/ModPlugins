@@ -30,5 +30,7 @@ void testCompileSqlDropTable();
 void testCompileSqlSelect();
 void testCompileSqlSelectJoin();
 void testCompileSqlUpdate();
+void testCompileSqlOffset();
+void testCompileSqlOffsetWithLimit();
 
 #endif

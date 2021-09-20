@@ -321,7 +321,7 @@ TableData joinTableData(std::string table1, TableData& data1, std::string table2
 
 
 
-std::vector<std::vector<std::string>> select(std::string tableName, std::vector<std::string> columns, SqlJoin join, SqlFilter filter, SqlOrderBy orderBy, std::vector<std::string> groupBy, int limit, std::string basePath){
+std::vector<std::vector<std::string>> select(std::string tableName, std::vector<std::string> columns, SqlJoin join, SqlFilter filter, SqlOrderBy orderBy, std::vector<std::string> groupBy, int limit, int offset, std::string basePath){
   auto tableData = readTableData(tableName, basePath);
 
   if (join.hasJoin){
@@ -372,7 +372,7 @@ std::vector<std::vector<std::string>> select(std::string tableName, std::vector<
   auto groupingIndexs = getColumnIndexs(tableData.header, qualifiedGroupBy);
   std::set<std::string> groupingKeysHash;
 
-  for (int i = 0; i < tableData.rows.size(); i++){
+  for (int i = offset; i < tableData.rows.size(); i++){
     auto row = tableData.rows.at(i);
     if (filter.hasFilter){
       auto columnValue = row.at(filterIndex);
@@ -381,7 +381,7 @@ std::vector<std::vector<std::string>> select(std::string tableName, std::vector<
         continue;
       }
     }
-    if (limit >= 0 && i >= limit){
+    if (limit >= 0 && finalRows.size() >= limit){
       break;
     }
 
@@ -441,7 +441,7 @@ void insert(std::string tableName, std::vector<std::string> columns, std::vector
 
 void update(std::string tableName, std::vector<std::string>& columns, std::vector<std::string>& values, std::string basePath){
   auto header = readHeader(tableName, basePath);
-  auto allRows = select(tableName, header, {}, SqlFilter{ .hasFilter = false }, SqlOrderBy{}, {}, -1, basePath);
+  auto allRows = select(tableName, header, {}, SqlFilter{ .hasFilter = false }, SqlOrderBy{}, {}, -1, 0, basePath);
 
   std::string content = createHeader(header);
   for (auto row : allRows){
@@ -456,7 +456,7 @@ void update(std::string tableName, std::vector<std::string>& columns, std::vecto
 
 void deleteRows(std::string tableName, SqlFilter& filter, std::string basePath){
   auto header = readHeader(tableName, basePath);
-  auto rowsToKeep = select(tableName, header, {}, SqlFilter{}, SqlOrderBy{}, {}, -1, basePath);
+  auto rowsToKeep = select(tableName, header, {}, SqlFilter{}, SqlOrderBy{}, {}, -1, 0, basePath);
   std::string content = createHeader(header);
   for (auto row : rowsToKeep){
     if (filter.hasFilter){
@@ -477,7 +477,7 @@ std::vector<std::vector<std::string>> executeSqlQuery(SqlQuery& query, std::stri
   if (query.type == SQL_SELECT){
     auto selectData = std::get_if<SqlSelect>(&query.queryData);
     assert(selectData != NULL);
-    return select(query.table, selectData -> columns, selectData -> join, selectData -> filter, selectData -> orderBy, selectData -> groupby, selectData -> limit, dataDir);
+    return select(query.table, selectData -> columns, selectData -> join, selectData -> filter, selectData -> orderBy, selectData -> groupby, selectData -> limit, selectData -> offset, dataDir);
   }else if (query.type == SQL_INSERT){
     auto insertData = std::get_if<SqlInsert>(&query.queryData);
     assert(insertData != NULL);

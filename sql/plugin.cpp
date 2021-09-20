@@ -259,8 +259,14 @@ int main(int argc, char *argv[]){
       .name = "testCompileSqlUpdate",
       .test = testCompileSqlUpdate,
     },
-
-    
+    TestCase {
+      .name = "testCompileSqlOffset",
+      .test = testCompileSqlOffset,
+    },
+    TestCase {
+      .name = "testCompileSqlOffsetWithLimit",
+      .test = testCompileSqlOffsetWithLimit,
+    },
   };
   int totalTests = tests.size();
   int numFailures = 0;

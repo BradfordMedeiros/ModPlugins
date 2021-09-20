@@ -116,7 +116,7 @@ std::vector<TokenResult> tokenize(std::string str, std::vector<char> delimiters)
 std::vector<const char*> validSymbols = {
   "SELECT", "FROM", "CREATE", "DROP", "TABLE", "SHOW", "TABLES", "VALUES", 
   "INSERT", "INTO", "DESCRIBE", "GROUP", "BY", "LIMIT", "WHERE", "UPDATE", "SET",
-  "ORDER", "ASC", "DESC", "DELETE", "LEFT", "JOIN", "ON",
+  "ORDER", "ASC", "DESC", "DELETE", "LEFT", "JOIN", "ON", "OFFSET",
 }; 
 
 std::vector<LexTokens> lex(std::string value){
@@ -283,6 +283,7 @@ auto machineTransitions = ""
 "IDENTIFIER_TOKEN:tableselect *END*\n"
 "IDENTIFIER_TOKEN:tableselect GROUP whereselect2\n" + 
 generateWhere("whereselect") + 
+"IDENTIFIER_TOKEN:tableselect OFFSET tableselect_offset\n"
 
 "IDENTIFIER_TOKEN:whereselect2 GROUP whereselect2\n"
 "GROUP:whereselect2 BY whereselect2\n"
@@ -294,6 +295,9 @@ generateWhere("whereselect") +
 "IDENTIFIER_TOKEN:whereselect2 LIMIT tableselect\n"
 "LIMIT:tableselect IDENTIFIER_TOKEN limit_tableselect\n"
 "IDENTIFIER_TOKEN:limit_tableselect *END*\n"
+"IDENTIFIER_TOKEN:limit_tableselect OFFSET tableselect_offset\n"
+"OFFSET:tableselect_offset IDENTIFIER_TOKEN tableselect_offset\n"
+"IDENTIFIER_TOKEN:tableselect_offset *END*\n"
 
 "INSERT INTO\n"
 "INTO IDENTIFIER_TOKEN tableinsert\n"
@@ -366,6 +370,7 @@ std::map<std::string, std::function<void(SqlQuery&, LexTokens* token)>> machineF
       query.type = SQL_SELECT;
       query.queryData = SqlSelect{
         .limit = -1,
+        .offset = 0,
       };
   }},
   {"IDENTIFIER_TOKEN:select", [](SqlQuery& query, LexTokens* token) -> void {
@@ -382,6 +387,13 @@ std::map<std::string, std::function<void(SqlQuery&, LexTokens* token)>> machineF
       SqlSelect* selectQuery = std::get_if<SqlSelect>(&query.queryData);
       assert(selectQuery != NULL);
       selectQuery -> limit = std::atoi(identifierToken -> content.c_str()); // strong typing should occur earlier
+  }},
+  {"IDENTIFIER_TOKEN:tableselect_offset", [](SqlQuery& query, LexTokens* token) -> void {
+      auto identifierToken = std::get_if<IdentifierToken>(token);
+      assert(identifierToken != NULL);
+      SqlSelect* selectQuery = std::get_if<SqlSelect>(&query.queryData);
+      assert(selectQuery != NULL);
+      selectQuery -> offset = std::atoi(identifierToken -> content.c_str());
   }},
   {"EQUAL:whereselect", [](SqlQuery& query, LexTokens* token) -> void {
       SqlSelect* selectQuery = std::get_if<SqlSelect>(&query.queryData);

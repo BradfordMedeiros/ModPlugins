@@ -170,3 +170,26 @@ void testCompileSqlUpdate(){
   assert(queryData -> columns.at(0) == "name");
   assert(queryData -> values.at(0) == "nonamehere");
 }
+
+void testCompileSqlOffset(){
+  auto sqlQuery1 = compileSqlQuery("select name from testtable offset 15");
+  assert(sqlQuery1.validQuery);
+  assert(sqlQuery1.type == SQL_SELECT);
+  assert(sqlQuery1.table == "testtable");
+  auto queryData = std::get_if<SqlSelect>(&(sqlQuery1.queryData));
+  assert(queryData != NULL);
+  assert(queryData -> columns.at(0) == "name");
+  assert(queryData -> offset == 15);
+}
+
+void testCompileSqlOffsetWithLimit(){
+  auto sqlQuery1 = compileSqlQuery("select name from testtable limit 5 offset 5");
+  assert(sqlQuery1.validQuery);
+  assert(sqlQuery1.type == SQL_SELECT);
+  assert(sqlQuery1.table == "testtable");
+  auto queryData = std::get_if<SqlSelect>(&(sqlQuery1.queryData));
+  assert(queryData != NULL);
+  assert(queryData -> columns.at(0) == "name");
+  assert(queryData -> limit == 5);
+  assert(queryData -> offset == 5);
+}

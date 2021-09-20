@@ -63,6 +63,7 @@ struct SqlSelect {
   std::vector<std::string> columns;
   SqlJoin join;
   int limit;
+  int offset;
   SqlFilter filter;
   SqlOrderBy orderBy;
   std::vector<std::string> groupby;
