@@ -64,7 +64,7 @@ struct TableData {
 
 TableData readTableData(std::string tableName, std::string basePath){
   auto tableContent = loadFile(tablePath(tableName, basePath));
-  auto rawRows = split(tableContent, '\n');
+  auto rawRows = filterWhitespace(split(tableContent, '\n'));
   auto header = split(rawRows.at(0), ',');
   std::vector<std::string> qualifiedHeader;
   for (auto col : header){
@@ -75,6 +75,9 @@ TableData readTableData(std::string tableName, std::string basePath){
   for (int i = 1; i < rawRows.size(); i++){
     auto columnContent = split(rawRows.at(i), ',');
     rows.push_back(columnContent);
+    std::cout << "columns size: " << columnContent.size() << std::endl;
+    std::cout << "header size: " << header.size() << std::endl;
+    assert(columnContent.size() == header.size());
   }
 
   return TableData{

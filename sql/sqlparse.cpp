@@ -335,8 +335,7 @@ generateWhere("tableupdate_where") +
 "FROM:delete_vals IDENTIFIER_TOKEN delete_vals\n"
 "IDENTIFIER_TOKEN:delete_vals WHERE delete_where_val\n" + 
 "IDENTIFIER_TOKEN:delete_vals *END*\n" + 
-generateWhere("delete_where_val") +
-"";
+generateWhere("delete_where_val");
 
 void setTableName(SqlQuery& query, LexTokens* token){
   auto identifier = std::get_if<IdentifierToken>(token);
@@ -591,7 +590,7 @@ std::map<std::string, std::function<void(SqlQuery&, LexTokens* token)>> machineF
 
 std::map<std::string, TokenState> createMachine(std::string transitionsStr, std::map<std::string, std::function<void(SqlQuery&, LexTokens* token)>>& fns){
   std::map<std::string, TokenState> machine;
-  auto transitions = split(transitionsStr, '\n');
+  auto transitions = filterWhitespace(split(transitionsStr, '\n'));
   for (auto transition : transitions){
     auto allTransitions = split(transition, ' ');
     assert(allTransitions.size() == 2 || allTransitions.size() == 3);
